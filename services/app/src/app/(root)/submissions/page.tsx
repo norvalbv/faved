@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import { GAME_DESIGN_BRIEF } from "@/app/constants/briefs"
-import { SubmissionsList } from "@/app/components/submissions/submissions-list"
+import { FilteredSubmissions } from "@/app/components/submissions/filtered-submissions"
 import type { Submission } from "@/app/types/submission"
 
 export const metadata: Metadata = {
@@ -56,15 +56,8 @@ export default async function SubmissionsPage(): Promise<React.ReactElement> {
           </div>
         </div>
 
-        {/* Filters - To be implemented */}
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">
-            Filters coming soon...
-          </p>
-        </div>
-
-        {/* Submissions List */}
-        <SubmissionsList items={mockSubmissions} />
+        {/* Filtered Submissions */}
+        <FilteredSubmissions initialSubmissions={mockSubmissions} />
       </div>
     </main>
   )
