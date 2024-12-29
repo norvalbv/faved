@@ -1,75 +1,54 @@
+import { eq } from 'drizzle-orm'
+import { drizzleDb } from '../index'
+import { submissions } from '../schema'
 import { nanoid } from 'nanoid'
-import { eq, desc } from 'drizzle-orm'
-import { db } from '../index'
-import { submissions, type Submission } from '../schema/submissions'
-
-type CreateSubmissionProps = Omit<Submission, 'id' | 'createdAt' | 'updatedAt' | 'status'> & {
-  status?: 'pending' | 'approved' | 'rejected'
-}
 
 export class SubmissionRepository {
-  static create({
-    briefId,
-    type,
-    content,
-    status = 'pending'
-  }: CreateSubmissionProps) {
-    const timestamp = new Date()
-    const submissionData = {
+  static async create(data: {
+    briefId: string
+    type: 'video_topic' | 'draft_script' | 'draft_video' | 'live_video'
+    content: string
+    status?: 'pending' | 'approved' | 'rejected'
+  }) {
+    const now = new Date()
+    return drizzleDb.insert(submissions).values({
       id: nanoid(),
-      briefId,
-      type,
-      content: JSON.stringify(content),
-      status,
-      createdAt: timestamp,
-      updatedAt: timestamp
-    } as const
-
-    return db
-      .insert(submissions)
-      .values(submissionData)
+      ...data,
+      status: data.status || 'pending',
+      createdAt: now,
+      updatedAt: now,
+    })
   }
 
-  static async getById(id: string): Promise<Submission | undefined> {
-    const [submission] = await db
+  static async getById(id: string) {
+    const results = await drizzleDb
       .select()
       .from(submissions)
       .where(eq(submissions.id, id))
-
-    if (!submission) return undefined
-
-    return {
-      ...submission,
-      content: JSON.parse(submission.content)
-    }
+      .limit(1)
+    return results[0]
   }
 
-  static async list(briefId?: string): Promise<Submission[]> {
-    const results = await db
+  static async list(briefId?: string) {
+    let query = drizzleDb
       .select()
       .from(submissions)
-      .where(briefId ? eq(submissions.briefId, briefId) : undefined)
-      .orderBy(desc(submissions.createdAt))
+      .orderBy(submissions.createdAt)
+    
+    if (briefId) {
+      query = query.where(eq(submissions.briefId, briefId))
+    }
 
-    return results.map(submission => ({
-      ...submission,
-      content: JSON.parse(submission.content)
-    }))
+    return query
   }
 
-  static updateStatus(id: string, status: 'pending' | 'approved' | 'rejected') {
-    return db
+  static async updateStatus(id: string, status: 'pending' | 'approved' | 'rejected') {
+    return drizzleDb
       .update(submissions)
       .set({ 
         status,
         updatedAt: new Date()
       })
-      .where(eq(submissions.id, id))
-  }
-
-  static delete(id: string) {
-    return db
-      .delete(submissions)
       .where(eq(submissions.id, id))
   }
 } 

@@ -1,96 +1,39 @@
-import { nanoid } from 'nanoid'
 import { eq } from 'drizzle-orm'
-import { db } from '../index'
-import { briefs, type Brief } from '../schema/briefs'
-
-type BriefOverview = {
-  title: string
-  description: string
-}
-
-type CreateBriefProps = Omit<Brief, 'id' | 'createdAt' | 'updatedAt'>
+import { drizzleDb } from '../index'
+import { briefs } from '../schema'
+import { nanoid } from 'nanoid'
 
 export class BriefRepository {
-  static create({
-    title,
-    type,
-    description,
-    overview,
-    guidelines,
-    examples
-  }: CreateBriefProps) {
-    const timestamp = new Date()
-    const briefData = {
+  static async create(data: {
+    title: string
+    type: 'game_design' | 'visual_creator' | 'filmmaking' | 'logo_design' | 'booktuber'
+    description: string
+    overview: Record<string, unknown>
+    guidelines: Record<string, unknown>
+    examples?: Record<string, unknown>
+  }) {
+    const now = new Date()
+    return drizzleDb.insert(briefs).values({
       id: nanoid(),
-      title,
-      type,
-      description,
-      overview: JSON.stringify(overview),
-      guidelines: JSON.stringify(guidelines),
-      examples: examples ? JSON.stringify(examples) : null,
-      createdAt: timestamp,
-      updatedAt: timestamp
-    } as const
-
-    return db
-      .insert(briefs)
-      .values(briefData)
-  }
-
-  static async getById(id: string): Promise<Brief | undefined> {
-    const [brief] = await db
-      .select()
-      .from(briefs)
-      .where(eq(briefs.id, id))
-
-    if (!brief) return undefined
-
-    return {
-      ...brief,
-      overview: JSON.parse(brief.overview as string) as BriefOverview,
-      guidelines: JSON.parse(brief.guidelines as string) as string[],
-      examples: brief.examples ? JSON.parse(brief.examples as string) as string[] : undefined
-    }
-  }
-
-  static async list(): Promise<Brief[]> {
-    const results = await db
-      .select()
-      .from(briefs)
-
-    return results.map(brief => ({
-      ...brief,
-      overview: JSON.parse(brief.overview as string) as BriefOverview,
-      guidelines: JSON.parse(brief.guidelines as string) as string[],
-      examples: brief.examples ? JSON.parse(brief.examples as string) as string[] : undefined
-    }))
-  }
-
-  static update(id: string, data: Partial<Omit<Brief, 'id' | 'createdAt' | 'updatedAt'>>) {
-    const updateData: Record<string, any> = {
       ...data,
-      updatedAt: new Date()
-    }
-
-    if (data.overview) {
-      updateData.overview = JSON.stringify(data.overview)
-    }
-    if (data.guidelines) {
-      updateData.guidelines = JSON.stringify(data.guidelines)
-    }
-    if (data.examples) {
-      updateData.examples = JSON.stringify(data.examples)
-    }
-
-    return db
-      .update(briefs)
-      .set(updateData)
-      .where(eq(briefs.id, id))
+      createdAt: now,
+      updatedAt: now,
+    })
   }
 
-  static delete(id: string) {
-    return db
-      .delete(briefs)
+  static async getById(id: string) {
+    const results = await drizzleDb
+      .select()
+      .from(briefs)
       .where(eq(briefs.id, id))
+      .limit(1)
+    return results[0]
+  }
+
+  static async list() {
+    return drizzleDb
+      .select()
+      .from(briefs)
+      .orderBy(briefs.createdAt)
   }
 } 
