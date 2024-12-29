@@ -1,7 +1,32 @@
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
-import { db } from '../index'
+import { Database } from "bun:sqlite";
+import { drizzle } from "drizzle-orm/bun-sqlite";
+import { migrate } from "drizzle-orm/bun-sqlite/migrator";
+import { join } from "path";
 
-// Run migrations
-migrate(db, { migrationsFolder: './drizzle' })
+const dbPath = join(import.meta.dir, "../sqlite.db");
 
-console.log('Database migrations completed successfully') 
+// Create/connect to SQLite database
+const sqlite = new Database(dbPath, { create: true });
+export const db = drizzle(sqlite);
+
+export const initDb = async () => {
+  try {
+    console.log('Initializing database...');
+    
+    // Run migrations from the drizzle folder
+    migrate(db, {
+      migrationsFolder: join(import.meta.dir, "../drizzle")
+    });
+
+    console.log('✅ Database initialized successfully');
+    return db;
+  } catch (error) {
+    console.error('❌ Failed to initialize database:', error);
+    throw error;
+  }
+};
+
+// Run initialization if this file is executed directly
+if (import.meta.main) {
+  await initDb();
+} 
