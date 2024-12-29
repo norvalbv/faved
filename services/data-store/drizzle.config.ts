@@ -4,5 +4,6 @@ export default {
   schema: './schema/**/*.ts',
   out: './drizzle',
   verbose: true,
-  strict: true
+  strict: true,
+  dialect: 'sqlite'
 } satisfies Config 
