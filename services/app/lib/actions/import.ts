@@ -1,8 +1,8 @@
 'use server'
 
 import { parse } from 'csv-parse'
-import { db } from '../../data-store'
-import { submissions, feedback } from '../../data-store/schema'
+import { db } from '~/services/data-store'
+import { submissions, feedback } from '~/services/data-store/schema'
 import { nanoid } from 'nanoid'
 import { eq } from 'drizzle-orm'
 import { requireAuth } from './auth'
