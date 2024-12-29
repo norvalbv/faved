@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -22,7 +22,7 @@
     "react-dropzone": "^14.3.5",
     "tailwind-merge": "^2.6.0",
     "zod": "^3.24.1",
-    "data-store": "workspace:*"
+    "@faved/data-store": "workspace:*"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
