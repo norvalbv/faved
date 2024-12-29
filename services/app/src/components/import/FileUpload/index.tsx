@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { importActivities } from '@/lib/actions/import'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
+import { Card } from '@/src/components/ui/card'
+import { Progress } from '@/src/components/ui/progress'
+import { Button } from '@/src/components/ui/button'
 
 export const FileUpload = () => {
   const [isUploading, setIsUploading] = useState(false)

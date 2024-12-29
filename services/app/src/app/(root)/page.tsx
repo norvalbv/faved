@@ -1,8 +1,8 @@
 import { Metadata } from "next"
-import { BriefCard } from "@/components/dashboard/brief-card"
-import { SubmissionsSection } from "@/components/dashboard/submissions-section"
-import { GAME_DESIGN_BRIEF } from "@/constants/briefs"
-import type { Submission } from "@/types/submission"
+import { BriefCard } from "@/src/components/dashboard/brief-card"
+import { SubmissionsSection } from "@/src/components/dashboard/submissions-section"
+import { GAME_DESIGN_BRIEF } from "@/src/constants/briefs"
+import type { Submission } from "@/src/types/submission"
 
 export const metadata: Metadata = {
   title: "Dashboard | Content Review Platform",

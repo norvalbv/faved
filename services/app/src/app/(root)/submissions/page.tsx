@@ -1,7 +1,7 @@
 import { Metadata } from "next"
-import { GAME_DESIGN_BRIEF } from "@/constants/briefs"
-import { FilteredSubmissions } from "@/components/submissions/filtered-submissions"
-import type { Submission } from "@/types/submission"
+import { GAME_DESIGN_BRIEF } from "@/src/constants/briefs"
+import { FilteredSubmissions } from "@/src/components/submissions/filtered-submissions"
+import type { Submission } from "@/src/types/submission"
 
 export const metadata: Metadata = {
   title: "Submissions | Content Review Platform",
