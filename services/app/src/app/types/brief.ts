@@ -56,6 +56,14 @@ export interface LogoDesignBrief extends Brief {
   }
 }
 
+export interface BookTuberBrief extends Brief {
+  type: "booktuber"
+  writingTools: {
+    title: string
+    items: string[]
+  }
+}
+
 export interface BriefTemplate {
   id: string
   name: string
