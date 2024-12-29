@@ -1,5 +1,5 @@
 import { formatDistanceToNow } from "date-fns"
-import type { SubmissionFeedback } from "@/app/types/submission"
+import type { SubmissionFeedback } from "@/types/submission"
 import { cn } from "@/lib/utils"
 
 interface FeedbackListProps {

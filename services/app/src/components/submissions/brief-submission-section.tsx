@@ -1,6 +1,6 @@
 "use client"
 
-import type { SubmissionType } from "@/app/types/submission"
+import type { SubmissionType } from "@/types/submission"
 import { SubmissionForm } from "./submission-form"
 
 interface BriefSubmissionSectionProps {

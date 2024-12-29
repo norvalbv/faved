@@ -1,4 +1,4 @@
-import type { Submission } from "@/app/types/submission"
+import type { Submission } from "@/types/submission"
 import { formatDistanceToNow } from "date-fns"
 import Link from "next/link"
 import { cn } from "@/lib/utils"

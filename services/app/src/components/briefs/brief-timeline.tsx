@@ -1,4 +1,4 @@
-import type { CollaborationStep } from "@/app/types/brief"
+import type { CollaborationStep } from "@/types/brief"
 
 interface BriefTimelineProps {
   steps: CollaborationStep[]

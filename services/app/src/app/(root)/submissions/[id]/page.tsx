@@ -3,9 +3,9 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
 import { cn } from "@/lib/utils"
-import { GAME_DESIGN_BRIEF } from "@/app/constants/briefs"
-import { FeedbackSection } from "@/app/components/submissions/feedback-section"
-import type { SubmissionFeedback } from "@/app/types/submission"
+import { GAME_DESIGN_BRIEF } from "@/constants/briefs"
+import { FeedbackSection } from "@/components/submissions/feedback-section"
+import type { SubmissionFeedback } from "@/types/submission"
 
 interface SubmissionPageProps {
   params: {

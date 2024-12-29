@@ -1,4 +1,4 @@
-import type { BriefGuideline } from "@/app/types/brief"
+import type { BriefGuideline } from "@/types/brief"
 
 interface BriefGuidelinesProps {
   guidelines: BriefGuideline[]

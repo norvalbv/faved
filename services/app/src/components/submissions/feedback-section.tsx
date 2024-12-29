@@ -1,6 +1,6 @@
 "use client"
 
-import type { SubmissionFeedback } from "@/app/types/submission"
+import type { SubmissionFeedback } from "@/types/submission"
 import { FeedbackList } from "./feedback-list"
 import { FeedbackForm } from "./feedback-form"
 

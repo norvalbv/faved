@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { startOfToday, startOfWeek, startOfMonth, isAfter } from "date-fns"
-import type { Submission } from "@/app/types/submission"
+import type { Submission } from "@/types/submission"
 import { SubmissionFilters } from "./submission-filters"
 import { SubmissionsList } from "./submissions-list"
 

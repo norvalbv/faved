@@ -1,4 +1,4 @@
-import type { Brief } from "@/app/types/brief"
+import type { Brief } from "@/types/brief"
 import { BriefTimeline } from "./brief-timeline"
 import { BriefGuidelines } from "./brief-guidelines"
 

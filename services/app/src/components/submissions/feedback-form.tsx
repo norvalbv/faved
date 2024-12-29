@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import type { SubmissionFeedback } from "@/app/types/submission"
+import type { SubmissionFeedback } from "@/types/submission"
 
 interface FeedbackFormProps {
   submissionId: string

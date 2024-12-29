@@ -1,8 +1,8 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { BriefDetails } from "@/app/components/briefs/brief-details"
-import { GAME_DESIGN_BRIEF } from "@/app/constants/briefs"
-import { BriefSubmissionSection } from "@/app/components/submissions/brief-submission-section"
+import { BriefDetails } from "@/components/briefs/brief-details"
+import { GAME_DESIGN_BRIEF } from "@/constants/briefs"
+import { BriefSubmissionSection } from "@/components/submissions/brief-submission-section"
 
 interface BriefPageProps {
   params: {
