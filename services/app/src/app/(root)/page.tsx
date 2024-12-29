@@ -27,7 +27,7 @@ const mockSubmissions: Submission[] = [
     content: "Character Design Process",
     status: "approved",
     briefId: GAME_DESIGN_BRIEF.id,
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
     updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
     influencerId: "user-1",
   },
@@ -35,28 +35,31 @@ const mockSubmissions: Submission[] = [
 
 export default function HomePage(): React.ReactElement {
   return (
-    <main className="min-h-screen bg-white p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="space-y-4 border-b border-gray-200 pb-8">
-          <h1 className="text-4xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-xl text-gray-600">
-            Welcome to the Content Review Platform. Manage and review content submissions from influencers.
-          </p>
-        </div>
-
-        {/* Available Briefs */}
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900">Available Briefs</h2>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <BriefCard brief={GAME_DESIGN_BRIEF} />
-            {/* More briefs will be added here */}
+    <div className="relative">
+      {/* Briefs Section */}
+      <section className="faved-section bg-gray-50">
+        <div className="faved-container">
+          <div className="space-y-8">
+            <div className="text-center space-y-4">
+              <h2 className="text-3xl font-bold">Available Briefs</h2>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Choose from our selection of brand collaboration opportunities.
+              </p>
+            </div>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <BriefCard brief={GAME_DESIGN_BRIEF} />
+              {/* More briefs will be added here */}
+            </div>
           </div>
         </div>
+      </section>
 
-        {/* Recent Submissions */}
-        <SubmissionsSection submissions={mockSubmissions} />
-      </div>
-    </main>
+      {/* Recent Submissions */}
+      <section className="faved-section">
+        <div className="faved-container">
+          <SubmissionsSection submissions={mockSubmissions} />
+        </div>
+      </section>
+    </div>
   )
 } 

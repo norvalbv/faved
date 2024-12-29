@@ -24,9 +24,9 @@ export default function RootLayout({
 }): React.ReactElement {
   return (
     <html lang="en" className={cn("h-full scroll-smooth antialiased", inter.variable)}>
-      <body className="flex min-h-full flex-col bg-background font-sans">
+      <body className="min-h-full bg-background font-sans">
         <Navigation />
-        <main className="flex-1">
+        <main className="pt-16">
           {children}
         </main>
       </body>
