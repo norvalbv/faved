@@ -1,6 +1,6 @@
 'use server'
 
-import { Brief } from '../types/brief'
+import type { Brief } from '../types/brief'
 
 export async function getBrief(id: string): Promise<Brief | null> {
   // TODO: Implement brief retrieval from data-store
