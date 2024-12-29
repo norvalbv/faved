@@ -2,10 +2,20 @@
   "name": "data-store",
   "module": "index.ts",
   "type": "module",
+  "scripts": {
+    "db:generate": "drizzle-kit generate:sqlite",
+    "db:push": "drizzle-kit push:sqlite",
+    "db:studio": "drizzle-kit studio"
+  },
   "devDependencies": {
-    "@types/bun": "latest"
+    "bun-types": "latest",
+    "drizzle-kit": "^0.30.1"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "drizzle-orm": "^0.28.3"
   }
 }
