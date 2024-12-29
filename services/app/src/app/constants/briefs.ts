@@ -81,24 +81,24 @@ export const VISUAL_CREATOR_BRIEF: VisualCreatorBrief = {
   id: "visual-creator-brief-1",
   type: "visual_creator",
   title: "Visual Creator Creative Brief",
-  description: "Create content showcasing how Milanote can enhance visual creative workflows",
+  description: "Create engaging content showcasing how Milanote can enhance visual creative workflows",
   createdAt: new Date(),
   updatedAt: new Date(),
   collaborationTimeline: [
     {
       step: 1,
       title: "Choose a video topic and Milanote use case",
-      description: "Select a visual design topic and plan how Milanote will be integrated",
+      description: "Select a topic and plan how Milanote will be integrated",
     },
     {
       step: 2,
       title: "Draft boards and script for the segment",
-      description: "Create your Milanote boards showcasing your visual design process",
+      description: "Create your Milanote boards and prepare your content script",
     },
     {
       step: 3,
       title: "Shoot the draft video segment",
-      description: "Record your content demonstrating visual design workflows in Milanote",
+      description: "Record your content following the approved script and boards",
     },
     {
       step: 4,
@@ -107,46 +107,55 @@ export const VISUAL_CREATOR_BRIEF: VisualCreatorBrief = {
     },
   ],
   overview: {
-    what: "Milanote is the perfect tool for visual creators. It provides a flexible canvas where you can organize your inspiration, plan your projects, and collaborate with clients. The visual nature of the tool makes it ideal for mood boards, style guides, and design presentations.",
-    gettingStarted: "Start by creating a free Milanote account and exploring the visual design templates. The drag-and-drop interface makes it easy to arrange your content, and you can quickly add images, colors, and notes to your boards.",
+    what: "Milanote is a tool for organizing creative projects. It exists to help people think and plan better at the early stages of the creative process. It's a flexible and unstructured workspace that lets ideas grow in whatever way makes sense to you. It feels less like traditional software and more like working on a wall in a creative studio.",
+    gettingStarted: "If you're new to Milanote, start by signing up for a free account. We suggest spending some time familiarising yourself with Milanote. Trying the product will allow you to understand how the features work and how they can fit into your creative process, as well as give you an opportunity to come up with ideas for a good project to share with your audience.",
   },
   guidelines: [
     {
-      category: "Visual Content Guidelines",
+      category: "Board Creation Guidelines",
       items: [
-        "Create visually rich boards with a mix of images and design elements",
-        "Show how Milanote helps organize visual inspiration",
-        "Demonstrate the mood board creation process",
-        "Include examples of client collaboration features",
-      ],
-    },
-    {
-      category: "Best Practices",
-      items: [
-        "Use high-quality images and screenshots",
-        "Show real-world design workflow examples",
-        "Highlight visual organization features",
-        "Demonstrate how to create style guides",
+        "Multiple Boards: Ensure you complete at least two boards (e.g., Project Plan and Moodboard)",
+        "Variety of Elements: Include various elements such as notes, images, website links, sketches, task cards, and color swatches",
+        "Visual Appeal: Design boards to be visually engaging with balanced mix of elements",
+        "Board Titles: Choose goal-oriented titles that clearly indicate purpose",
       ],
     },
     {
       category: "What to Avoid",
       items: [
-        "Low-resolution visuals",
-        "Cluttered or disorganized boards",
-        "Generic design examples",
-        "Overly complex workflows",
+        "Empty Cards: No blank note cards or task lists",
+        "YouTube References: Avoid YouTube-related names or planning thumbnails",
+        "Insufficient Content: Ensure boards are not sparse or lacking depth",
+        "Aimless Content Dumps: Avoid boards without clear focus or goals",
+        "Uninspiring Visuals: Avoid overly text-heavy or poorly arranged content",
+      ],
+    },
+    {
+      category: "Script Guidelines",
+      items: [
+        "Avoid mentioning YouTube planning or content strategies",
+        "Introduce Milanote properly before diving into projects",
+        "Use 'sign up for free' instead of 'download'",
+        "Include clear call-to-action directing to description link",
       ],
     },
   ],
   examples: [
     {
-      title: "Visual Design Workflow Example",
-      url: "https://www.youtube.com/watch?v=example1",
+      title: "Visual Organization",
+      url: "https://youtu.be/N3KxgUxPhqI",
     },
     {
-      title: "Brand Design Process",
-      url: "https://www.youtube.com/watch?v=example2",
+      title: "Creative Planning",
+      url: "https://youtu.be/fG8Q3bg44jY",
+    },
+    {
+      title: "Project Management",
+      url: "https://youtu.be/ZGkXs4M0cUg",
+    },
+    {
+      title: "Design Process",
+      url: "https://youtu.be/65rkTFDXceY",
     },
   ],
 }
