@@ -1,11 +1,9 @@
 'use server'
 
 import { parse } from 'csv-parse'
-import { db } from '~/services/data-store'
-import { submissions, feedback } from '~/services/data-store/schema'
-import { nanoid } from 'nanoid'
-import { eq } from 'drizzle-orm'
-import { requireAuth } from './auth'
+import { requireAuth } from '../utils/auth'
+import { SubmissionRepository } from '../../../data-store/repositories/submission'
+import { FeedbackRepository } from '../../../data-store/repositories/feedback'
 
 interface ActivityRecord {
   input: string
@@ -37,62 +35,55 @@ export async function importActivities(fileContent: string) {
   records.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
 
   for (const record of records) {
-    const timestamp = new Date(record.timestamp)
-    
     if (record.message.toLowerCase().includes('submitted')) {
       // Create submission
-      await db.insert(submissions).values({
-        id: nanoid(),
+      await SubmissionRepository.create({
         briefId: record.brief_id,
         type: 'draft_script', // Default to draft_script for now
         content: record.input,
-        status: 'pending',
-        createdAt: timestamp,
-        updatedAt: timestamp,
+        status: 'pending'
       })
     } 
     else if (record.message.toLowerCase().includes('feedback') && record.feedback) {
-      // Create feedback
-      await db.insert(feedback).values({
-        id: nanoid(),
-        submissionId: record.brief_id, // We'll need to update this to link to actual submission
-        type: 'suggestion',
-        content: record.feedback,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-      })
+      // Find the latest submission for this brief
+      const submissions = await SubmissionRepository.list(record.brief_id)
+      const latestSubmission = submissions[0] // list() returns ordered by createdAt desc
+
+      if (latestSubmission) {
+        // Create feedback
+        await FeedbackRepository.create({
+          submissionId: latestSubmission.id,
+          type: 'suggestion',
+          content: record.feedback
+        })
+      }
     }
     else if (record.message.toLowerCase().includes('approved')) {
-      // Update submission status
-      await db
-        .update(submissions)
-        .set({ 
-          status: 'approved',
-          updatedAt: timestamp,
-        })
-        .where(eq(submissions.briefId, record.brief_id))
+      // Find the latest submission for this brief
+      const submissions = await SubmissionRepository.list(record.brief_id)
+      const latestSubmission = submissions[0]
+
+      if (latestSubmission) {
+        await SubmissionRepository.updateStatus(latestSubmission.id, 'approved')
+      }
     }
     else if (record.message.toLowerCase().includes('rejected')) {
-      // Update submission status
-      await db
-        .update(submissions)
-        .set({ 
-          status: 'rejected',
-          updatedAt: timestamp,
-        })
-        .where(eq(submissions.briefId, record.brief_id))
+      // Find the latest submission for this brief
+      const submissions = await SubmissionRepository.list(record.brief_id)
+      const latestSubmission = submissions[0]
 
-      // Create a "fake" original submission based on feedback
-      if (record.feedback) {
-        await db.insert(submissions).values({
-          id: nanoid(),
-          briefId: record.brief_id,
-          type: 'draft_script',
-          content: generateRejectedContent(record.input, record.feedback),
-          status: 'rejected',
-          createdAt: new Date(timestamp.getTime() - 1000), // 1 second before
-          updatedAt: timestamp,
-        })
+      if (latestSubmission) {
+        await SubmissionRepository.updateStatus(latestSubmission.id, 'rejected')
+
+        // Create a "fake" original submission based on feedback
+        if (record.feedback) {
+          await SubmissionRepository.create({
+            briefId: record.brief_id,
+            type: 'draft_script',
+            content: generateRejectedContent(record.input, record.feedback),
+            status: 'rejected'
+          })
+        }
       }
     }
   }

@@ -1,46 +1,44 @@
 'use server'
 
-import { z } from 'zod'
-import type { Feedback } from '../types/feedback'
+import { auth } from '../utils/auth'
+import { FeedbackRepository } from '../../../data-store/repositories/feedback'
 
-const feedbackSchema = z.object({
-  submissionId: z.string(),
-  content: z.string(),
-  type: z.enum(['suggestion', 'correction', 'approval', 'rejection']),
-})
-
-export async function createFeedback(formData: FormData) {
-  const validatedFields = feedbackSchema.safeParse({
-    submissionId: formData.get('submissionId'),
-    content: formData.get('content'),
-    type: formData.get('type'),
-  })
-
-  if (!validatedFields.success) {
-    return {
-      errors: validatedFields.error.flatten().fieldErrors,
+export async function createFeedback(data: {
+  submissionId: string
+  type: 'suggestion' | 'correction' | 'approval' | 'rejection'
+  content: string
+}) {
+  try {
+    // 1. Verify user is logged in
+    const { userId } = auth()
+    if (!userId) {
+      throw new Error('Unauthorized')
     }
-  }
 
-  // TODO: Save feedback to data-store
-  return {
-    success: true,
-    data: validatedFields.data,
+    // 2. Create feedback
+    await FeedbackRepository.create(data)
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error creating feedback:', error)
+    throw error
   }
 }
 
-export async function getFeedback(submissionId: string): Promise<Feedback[]> {
-  // TODO: Implement feedback retrieval from data-store
-  return []
-}
+export async function listFeedback(submissionId: string) {
+  try {
+    // 1. Verify user is logged in
+    const { userId } = auth()
+    if (!userId) {
+      throw new Error('Unauthorized')
+    }
 
-export async function analyzeBriefCompliance(submissionId: string): Promise<{
-  matches: string[]
-  mismatches: string[]
-}> {
-  // TODO: Implement brief compliance analysis
-  return {
-    matches: [],
-    mismatches: [],
+    // 2. Get feedback for submission
+    const feedback = await FeedbackRepository.listBySubmission(submissionId)
+
+    return feedback
+  } catch (error) {
+    console.error('Error fetching feedback:', error)
+    throw error
   }
 } 

@@ -1,87 +1,65 @@
 'use server'
 
-import { db } from '../../data-store'
-import { submissions } from '../../data-store/schema'
-import { nanoid } from 'nanoid'
-import { eq } from 'drizzle-orm'
-import { submissionSchema, type SubmissionData } from '../validations/submissions'
-import { requireAuth } from './auth'
-
-type DBSubmission = typeof submissions.$inferSelect
-
-export async function createSubmission(data: SubmissionData) {
-  const user = await requireAuth('influencer')
-  const timestamp = new Date()
-
-  // Validate submission data
-  const validatedData = submissionSchema.parse(data)
-
-  // Create submission
-  const submissionId = nanoid()
-  await db.insert(submissions).values({
-    id: submissionId,
-    briefId: validatedData.briefId,
-    type: validatedData.type,
-    content: JSON.stringify(validatedData.content),
-    status: 'pending',
-    createdAt: timestamp,
-    updatedAt: timestamp,
-  })
-
-  return {
-    success: true,
-    submissionId,
-  }
-}
+import { auth } from '../utils/auth'
+import { SubmissionRepository } from '../../../data-store/repositories/submission'
 
 export async function getSubmission(id: string) {
-  const user = await requireAuth()
+  try {
+    // 1. Verify user is logged in
+    const { userId } = auth()
+    if (!userId) {
+      throw new Error('Unauthorized')
+    }
 
-  const [submission] = await db
-    .select()
-    .from(submissions)
-    .where(eq(submissions.id, id))
+    // 2. Get submission
+    const submission = await SubmissionRepository.getById(id)
+    if (!submission) {
+      throw new Error('Submission not found')
+    }
 
-  if (!submission) {
-    throw new Error('Submission not found')
-  }
-
-  return {
-    ...submission,
-    content: JSON.parse(submission.content),
+    return submission
+  } catch (error) {
+    console.error('Error fetching submission:', error)
+    throw error
   }
 }
 
 export async function listSubmissions(briefId?: string) {
-  const user = await requireAuth()
+  try {
+    // 1. Verify user is logged in
+    const { userId } = auth()
+    if (!userId) {
+      throw new Error('Unauthorized')
+    }
 
-  const results = await db
-    .select()
-    .from(submissions)
-    .where(briefId ? eq(submissions.briefId, briefId) : undefined)
+    // 2. Get submissions
+    const submissions = await SubmissionRepository.list(briefId)
 
-  return results.map((submission: DBSubmission) => ({
-    ...submission,
-    content: JSON.parse(submission.content),
-  }))
+    return submissions
+  } catch (error) {
+    console.error('Error fetching submissions:', error)
+    throw error
+  }
 }
 
-export async function updateSubmissionStatus(
-  id: string,
-  status: 'approved' | 'rejected'
-) {
-  const user = await requireAuth('brand')
-  const timestamp = new Date()
+export async function createSubmission(data: {
+  briefId: string
+  type: 'video_topic' | 'draft_script' | 'draft_video' | 'live_video'
+  content: string
+}) {
+  try {
+    // 1. Verify user is logged in
+    const { userId } = auth()
+    if (!userId) {
+      throw new Error('Unauthorized')
+    }
 
-  await db
-    .update(submissions)
-    .set({
-      status,
-      updatedAt: timestamp,
-    })
-    .where(eq(submissions.id, id))
+    // 2. Create submission
+    await SubmissionRepository.create(data)
 
-  return {
-    success: true,
+    return { success: true }
+  } catch (error) {
+    console.error('Error creating submission:', error)
+    throw error
   }
 } 
