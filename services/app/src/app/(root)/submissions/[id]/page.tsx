@@ -1,0 +1,107 @@
+import { Metadata } from "next"
+import { notFound } from "next/navigation"
+import Link from "next/link"
+import { formatDistanceToNow } from "date-fns"
+import { cn } from "@/lib/utils"
+import { GAME_DESIGN_BRIEF } from "@/app/constants/briefs"
+
+interface SubmissionPageProps {
+  params: {
+    id: string
+  }
+}
+
+// Mock data - in a real app this would come from an API
+const mockSubmission = {
+  id: "1",
+  type: "video_topic",
+  content: "Game Design Workflow Overview",
+  status: "pending",
+  briefId: GAME_DESIGN_BRIEF.id,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  influencerId: "user-1",
+}
+
+export const metadata: Metadata = {
+  title: "Submission Details | Content Review Platform",
+  description: "View submission details and feedback",
+}
+
+export default async function SubmissionPage({ params }: SubmissionPageProps): Promise<React.ReactElement> {
+  const submissionId = await Promise.resolve(params.id)
+  
+  // In a real app, we would fetch the submission
+  if (submissionId !== mockSubmission.id) {
+    notFound()
+  }
+
+  return (
+    <main className="container mx-auto px-4 py-8">
+      <div className="mx-auto max-w-4xl space-y-8">
+        {/* Header */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold tracking-tight">Submission Details</h1>
+            <Link
+              href={`/briefs/${mockSubmission.briefId}`}
+              className="text-sm text-primary hover:underline"
+            >
+              View Brief
+            </Link>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-medium">
+              {mockSubmission.type.split("_").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")}
+            </span>
+            <span className={cn(
+              "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
+              {
+                "bg-yellow-100 text-yellow-800": mockSubmission.status === "pending",
+                "bg-green-100 text-green-800": mockSubmission.status === "approved",
+                "bg-red-100 text-red-800": mockSubmission.status === "rejected",
+              }
+            )}>
+              {mockSubmission.status.charAt(0).toUpperCase() + mockSubmission.status.slice(1)}
+            </span>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold tracking-tight">Content</h2>
+          <div className="rounded-lg border bg-card p-6">
+            <p className="whitespace-pre-wrap text-sm">{mockSubmission.content}</p>
+          </div>
+        </div>
+
+        {/* Metadata */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold tracking-tight">Details</h2>
+          <dl className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1">
+              <dt className="text-sm font-medium text-muted-foreground">Submitted</dt>
+              <dd className="text-sm">
+                {formatDistanceToNow(mockSubmission.createdAt, { addSuffix: true })}
+              </dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="text-sm font-medium text-muted-foreground">Last Updated</dt>
+              <dd className="text-sm">
+                {formatDistanceToNow(mockSubmission.updatedAt, { addSuffix: true })}
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        {/* Feedback Section - Empty state for now */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold tracking-tight">Feedback</h2>
+          <div className="rounded-lg border bg-card p-6 text-center text-sm text-muted-foreground">
+            No feedback yet. Your submission is being reviewed.
+          </div>
+        </div>
+      </div>
+    </main>
+  )
+} 
