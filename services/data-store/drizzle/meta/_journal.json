@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1735510046458,
+      "tag": "0000_opposite_magik",
+      "breakpoints": true
+    }
+  ]
+}
