@@ -3,12 +3,15 @@
   "module": "index.ts",
   "type": "module",
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/nanoid": "^3.0.0"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "csv-parse": "^5.6.0",
+    "nanoid": "^5.0.9",
     "zod": "^3.24.1"
   }
 }
