@@ -441,4 +441,12 @@ export const BOOKTUBER_BRIEF: BookTuberBrief = {
       "Story outline organizer",
     ],
   },
-} 
+}
+
+export const ALL_BRIEFS = [
+  GAME_DESIGN_BRIEF,
+  VISUAL_CREATOR_BRIEF,
+  FILMMAKING_BRIEF,
+  LOGO_DESIGN_BRIEF,
+  BOOKTUBER_BRIEF,
+] as const 

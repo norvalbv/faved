@@ -1,8 +1,10 @@
+import { ReactElement } from "react"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { ALL_BRIEFS } from "@/src/constants/briefs"
 import { BriefDetails } from "@/src/components/briefs/brief-details"
-import { GAME_DESIGN_BRIEF } from "@/src/constants/briefs"
 import { BriefSubmissionSection } from "@/src/components/submissions/brief-submission-section"
+import { Brief } from "@/src/types/brief"
 
 interface BriefPageProps {
   params: {
@@ -10,17 +12,20 @@ interface BriefPageProps {
   }
 }
 
-// In a real app, this would be dynamic based on the brief
-export const metadata: Metadata = {
-  title: `${GAME_DESIGN_BRIEF.title} | Content Review Platform`,
-  description: GAME_DESIGN_BRIEF.description,
+export async function generateMetadata({ params }: BriefPageProps): Promise<Metadata> {
+  const brief = ALL_BRIEFS.find((b: Brief) => b.id === params.id)
+  if (!brief) return { title: "Brief Not Found" }
+
+  return {
+    title: `${brief.title} | Content Review Platform`,
+    description: brief.description,
+  }
 }
 
-export default async function BriefPage({ params }: BriefPageProps): Promise<React.ReactElement> {
-  // For now, we only have the game design brief
-  const briefId = await Promise.resolve(params.id)
+export default async function BriefPage({ params }: BriefPageProps): Promise<ReactElement> {
+  const brief = ALL_BRIEFS.find((b: Brief) => b.id === params.id)
   
-  if (briefId !== GAME_DESIGN_BRIEF.id) {
+  if (!brief) {
     notFound()
   }
 
@@ -28,8 +33,8 @@ export default async function BriefPage({ params }: BriefPageProps): Promise<Rea
     <main className="container mx-auto px-4 py-8">
       <div className="mx-auto max-w-4xl">
         <div className="space-y-12">
-          <BriefDetails brief={GAME_DESIGN_BRIEF} />
-          <BriefSubmissionSection briefId={GAME_DESIGN_BRIEF.id} />
+          <BriefDetails brief={brief} />
+          <BriefSubmissionSection briefId={brief.id} />
         </div>
       </div>
     </main>
