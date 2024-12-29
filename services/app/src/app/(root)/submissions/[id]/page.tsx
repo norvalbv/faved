@@ -4,6 +4,8 @@ import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
 import { cn } from "@/lib/utils"
 import { GAME_DESIGN_BRIEF } from "@/app/constants/briefs"
+import { FeedbackSection } from "@/app/components/submissions/feedback-section"
+import type { SubmissionFeedback } from "@/app/types/submission"
 
 interface SubmissionPageProps {
   params: {
@@ -22,6 +24,18 @@ const mockSubmission = {
   updatedAt: new Date(),
   influencerId: "user-1",
 }
+
+// Mock feedback data
+const mockFeedback: SubmissionFeedback[] = [
+  {
+    id: "1",
+    submissionId: "1",
+    type: "suggestion" as const,
+    content: "Consider adding more details about how Milanote can be used for character design documentation.",
+    createdAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
+    reviewerId: "reviewer-1",
+  },
+]
 
 export const metadata: Metadata = {
   title: "Submission Details | Content Review Platform",
@@ -94,13 +108,11 @@ export default async function SubmissionPage({ params }: SubmissionPageProps): P
           </dl>
         </div>
 
-        {/* Feedback Section - Empty state for now */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight">Feedback</h2>
-          <div className="rounded-lg border bg-card p-6 text-center text-sm text-muted-foreground">
-            No feedback yet. Your submission is being reviewed.
-          </div>
-        </div>
+        {/* Feedback Section */}
+        <FeedbackSection
+          submissionId={mockSubmission.id}
+          feedback={mockFeedback}
+        />
       </div>
     </main>
   )
