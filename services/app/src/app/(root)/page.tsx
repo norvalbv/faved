@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   description: "Manage and review content submissions",
 }
 
-export default function HomePage() {
+export default function HomePage(): React.ReactElement {
   return (
     <main className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>

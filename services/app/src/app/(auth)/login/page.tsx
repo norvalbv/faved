@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   description: "Login to manage content submissions",
 }
 
-export default function LoginPage() {
+export default function LoginPage(): React.ReactElement {
   return (
     <main className="container mx-auto flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md space-y-8">
@@ -17,7 +17,6 @@ export default function LoginPage() {
             Enter your credentials to access the platform
           </p>
         </div>
-        {/* Auth form will be added here */}
       </div>
     </main>
   )
