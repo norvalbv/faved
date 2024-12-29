@@ -9,13 +9,14 @@
   },
   "devDependencies": {
     "bun-types": "latest",
-    "drizzle-kit": "^0.30.1"
+    "drizzle-kit": "^0.30.1",
+    "@types/better-sqlite3": "^7.6.8"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@libsql/client": "^0.14.0",
+    "better-sqlite3": "^9.2.2",
     "drizzle-orm": "^0.28.3"
   }
 }
