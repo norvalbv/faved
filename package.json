@@ -9,6 +9,9 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "date-fns": "^4.1.0"
+    "@types/better-sqlite3": "^7.6.12",
+    "better-sqlite3": "^11.7.0",
+    "date-fns": "^4.1.0",
+    "drizzle-orm": "^0.38.3"
   }
 }

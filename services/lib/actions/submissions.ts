@@ -7,6 +7,8 @@ import { eq } from 'drizzle-orm'
 import { submissionSchema, type SubmissionData } from '../validations/submissions'
 import { requireAuth } from './auth'
 
+type DBSubmission = typeof submissions.$inferSelect
+
 export async function createSubmission(data: SubmissionData) {
   const user = await requireAuth('influencer')
   const timestamp = new Date()
@@ -53,14 +55,12 @@ export async function getSubmission(id: string) {
 export async function listSubmissions(briefId?: string) {
   const user = await requireAuth()
 
-  let query = db.select().from(submissions)
-  if (briefId) {
-    query = query.where(eq(submissions.briefId, briefId))
-  }
+  const results = await db
+    .select()
+    .from(submissions)
+    .where(briefId ? eq(submissions.briefId, briefId) : undefined)
 
-  const results = await query
-
-  return results.map(submission => ({
+  return results.map((submission: DBSubmission) => ({
     ...submission,
     content: JSON.parse(submission.content),
   }))
