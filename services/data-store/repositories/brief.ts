@@ -1,8 +1,12 @@
 import { nanoid } from 'nanoid'
 import { eq } from 'drizzle-orm'
 import { db } from '../index'
-import { briefs } from '../schema'
-import type { Brief } from '../schema/briefs'
+import { briefs, type Brief } from '../schema/briefs'
+
+type BriefOverview = {
+  title: string
+  description: string
+}
 
 type CreateBriefProps = Omit<Brief, 'id' | 'createdAt' | 'updatedAt'>
 
@@ -43,9 +47,9 @@ export class BriefRepository {
 
     return {
       ...brief,
-      overview: JSON.parse(brief.overview),
-      guidelines: JSON.parse(brief.guidelines),
-      examples: brief.examples ? JSON.parse(brief.examples) : undefined
+      overview: JSON.parse(brief.overview as string) as BriefOverview,
+      guidelines: JSON.parse(brief.guidelines as string) as string[],
+      examples: brief.examples ? JSON.parse(brief.examples as string) as string[] : undefined
     }
   }
 
@@ -56,9 +60,9 @@ export class BriefRepository {
 
     return results.map(brief => ({
       ...brief,
-      overview: JSON.parse(brief.overview),
-      guidelines: JSON.parse(brief.guidelines),
-      examples: brief.examples ? JSON.parse(brief.examples) : undefined
+      overview: JSON.parse(brief.overview as string) as BriefOverview,
+      guidelines: JSON.parse(brief.guidelines as string) as string[],
+      examples: brief.examples ? JSON.parse(brief.examples as string) as string[] : undefined
     }))
   }
 

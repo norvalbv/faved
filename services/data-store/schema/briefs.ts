@@ -11,3 +11,6 @@ export const briefs = sqliteTable('briefs', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 })
+
+export type Brief = typeof briefs.$inferSelect
+export type NewBrief = typeof briefs.$inferInsert

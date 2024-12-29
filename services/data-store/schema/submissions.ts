@@ -10,3 +10,6 @@ export const submissions = sqliteTable('submissions', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 })
+
+export type Submission = typeof submissions.$inferSelect
+export type NewSubmission = typeof submissions.$inferInsert
