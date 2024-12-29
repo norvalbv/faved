@@ -40,6 +40,14 @@ export interface VisualCreatorBrief extends Brief {
   type: "visual_creator"
 }
 
+export interface FilmmakingBrief extends Brief {
+  type: "filmmaking"
+  productionTools: {
+    title: string
+    items: string[]
+  }
+}
+
 export interface BriefTemplate {
   id: string
   name: string

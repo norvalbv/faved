@@ -1,4 +1,4 @@
-import type { GameDesignBrief, VisualCreatorBrief } from "../types/brief"
+import type { GameDesignBrief, VisualCreatorBrief, FilmmakingBrief } from "../types/brief"
 
 export const GAME_DESIGN_BRIEF: GameDesignBrief = {
   id: "game-design-brief-1",
@@ -149,4 +149,103 @@ export const VISUAL_CREATOR_BRIEF: VisualCreatorBrief = {
       url: "https://www.youtube.com/watch?v=example2",
     },
   ],
+}
+
+export const FILMMAKING_BRIEF: FilmmakingBrief = {
+  id: "filmmaking-brief-1",
+  type: "filmmaking",
+  title: "Filmmaking Creative Brief",
+  description: "Create engaging content showcasing how Milanote can streamline film production workflows",
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  collaborationTimeline: [
+    {
+      step: 1,
+      title: "Choose a video topic and Milanote use case",
+      description: "Select a topic and plan how Milanote will be integrated",
+    },
+    {
+      step: 2,
+      title: "Draft boards and script for the segment",
+      description: "Create your Milanote boards and prepare your content script",
+    },
+    {
+      step: 3,
+      title: "Shoot the draft video segment",
+      description: "Record your content following the approved script and boards",
+    },
+    {
+      step: 4,
+      title: "Publish the video and receive payment",
+      description: "After final approval, publish the content and complete the collaboration",
+    },
+  ],
+  overview: {
+    what: "Milanote is a tool for organizing creative projects. It exists to help people think and plan better at the early stages of the creative process. It's a flexible and unstructured workspace that lets ideas grow in whatever way makes sense to you. It feels less like traditional software and more like working on a wall in a creative studio.",
+    gettingStarted: "If you're new to Milanote, start by signing up for a free account. We suggest spending some time familiarising yourself with Milanote. Trying the product will allow you to understand how the features work and how they can fit into your creative process, as well as give you an opportunity to come up with ideas for a good project to share with your audience.",
+  },
+  guidelines: [
+    {
+      category: "Board Creation Guidelines",
+      items: [
+        "Multiple Boards: Ensure you complete at least two boards (e.g., Project Plan and Moodboard)",
+        "Variety of Elements: Include notes, images, website links, sketches, task cards, and color swatches",
+        "Visual Appeal: Design boards to be visually engaging with balanced mix of elements",
+        "Board Titles: Choose goal-oriented titles that clearly indicate purpose",
+      ],
+    },
+    {
+      category: "What to Avoid",
+      items: [
+        "Empty Cards: No blank note cards or task lists",
+        "YouTube References: Avoid YouTube-related names or planning thumbnails",
+        "Insufficient Content: Ensure boards are not sparse or lacking depth",
+        "Aimless Content Dumps: Avoid boards without clear focus or goals",
+        "Uninspiring Visuals: Avoid overly text-heavy or poorly arranged content",
+      ],
+    },
+    {
+      category: "Script Guidelines",
+      items: [
+        "Introduce Milanote properly before diving into projects",
+        "Use 'sign up for free' instead of 'download'",
+        "Include clear call-to-action directing to description link",
+        "Show Milanote interface clearly with proper screen recording",
+        "Allow viewers time to understand the workflow",
+      ],
+    },
+  ],
+  examples: [
+    {
+      title: "Film Pre-production Example",
+      url: "https://www.youtube.com/watch?v=AXidstI2kAg",
+    },
+    {
+      title: "Filmmaking Workflow",
+      url: "https://www.youtube.com/watch?v=El76uuVrkzI",
+    },
+    {
+      title: "Production Planning",
+      url: "https://www.youtube.com/watch?v=gdbsrTO3klk",
+    },
+    {
+      title: "Creative Process",
+      url: "https://www.youtube.com/watch?v=e5x0C5_SWC0",
+    },
+    {
+      title: "Project Organization",
+      url: "https://www.youtube.com/watch?v=z5TLdvASx2g",
+    },
+  ],
+  productionTools: {
+    title: "Essential Production Tools",
+    items: [
+      "Pre-production plan board",
+      "Shoot moodboard",
+      "Storyboard template",
+      "Call sheet organizer",
+      "Shot list planner",
+      "Gear list manager",
+    ],
+  },
 } 
