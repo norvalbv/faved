@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { join } from "path";
 
-const dbPath = join(import.meta.dir, "../sqlite.db");
+const dbPath = join(process.cwd(), "sqlite.db");
 
 // Create/connect to SQLite database
 const sqlite = new Database(dbPath, { create: true });
@@ -15,7 +15,7 @@ export const initDb = async () => {
     
     // Run migrations from the drizzle folder
     migrate(db, {
-      migrationsFolder: join(import.meta.dir, "../drizzle")
+      migrationsFolder: join(process.cwd(), "drizzle")
     });
 
     console.log('✅ Database initialized successfully');
