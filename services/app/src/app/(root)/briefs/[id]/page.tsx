@@ -2,6 +2,7 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { BriefDetails } from "@/app/components/briefs/brief-details"
 import { GAME_DESIGN_BRIEF } from "@/app/constants/briefs"
+import { BriefSubmissionSection } from "@/app/components/submissions/brief-submission-section"
 
 interface BriefPageProps {
   params: {
@@ -15,16 +16,21 @@ export const metadata: Metadata = {
   description: GAME_DESIGN_BRIEF.description,
 }
 
-export default function BriefPage({ params }: BriefPageProps): React.ReactElement {
+export default async function BriefPage({ params }: BriefPageProps): Promise<React.ReactElement> {
   // For now, we only have the game design brief
-  if (params.id !== GAME_DESIGN_BRIEF.id) {
+  const briefId = await Promise.resolve(params.id)
+  
+  if (briefId !== GAME_DESIGN_BRIEF.id) {
     notFound()
   }
 
   return (
     <main className="container mx-auto px-4 py-8">
       <div className="mx-auto max-w-4xl">
-        <BriefDetails brief={GAME_DESIGN_BRIEF} />
+        <div className="space-y-12">
+          <BriefDetails brief={GAME_DESIGN_BRIEF} />
+          <BriefSubmissionSection briefId={GAME_DESIGN_BRIEF.id} />
+        </div>
       </div>
     </main>
   )
