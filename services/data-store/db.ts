@@ -1,11 +1,11 @@
-import { Database } from "bun:sqlite";
-import { drizzle } from "drizzle-orm/bun-sqlite";
-import { join } from "path";
+import Database from 'better-sqlite3'
+import path from 'path'
 
-// Create/connect to SQLite database
-const sqlite = new Database(join(process.cwd(), "sqlite.db"), { create: true });
+// Initialize SQLite database
+const dbPath = path.join(process.cwd(), 'sqlite.db')
+export const db = new Database(dbPath)
 
-// Create drizzle database instance
-export const db = drizzle(sqlite);
+// Enable foreign keys
+db.exec('PRAGMA foreign_keys = ON')
 
 export type * from './schema' 

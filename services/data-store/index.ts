@@ -1,8 +1,8 @@
-// Export database instance
-export { db } from './db';
+import { drizzle } from 'drizzle-orm/better-sqlite3'
+import { db } from './db'
+import * as schema from './schema'
 
-// Export schemas
-export * from './schema';
+// Create drizzle database instance
+export const drizzleDb = drizzle(db, { schema })
 
-// Export repositories
-export * from './repositories';
+export type * from './schema'
