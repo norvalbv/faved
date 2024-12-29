@@ -1,9 +1,9 @@
 'use server'
 
-import { auth } from '@clerk/nextjs'
-import { db } from '../../data-store'
+import { auth } from '@clerk/nextjs/server'
+import { db } from '~/services/data-store'
 import type { User, UserRole } from '../types/user'
-import { users } from '../../data-store/schema'
+import { users } from '~/services/data-store/schema'
 import { eq } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 
