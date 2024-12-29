@@ -48,6 +48,14 @@ export interface FilmmakingBrief extends Brief {
   }
 }
 
+export interface LogoDesignBrief extends Brief {
+  type: "logo_design"
+  designProcess: {
+    title: string
+    items: string[]
+  }
+}
+
 export interface BriefTemplate {
   id: string
   name: string
