@@ -9,15 +9,15 @@ interface BriefCardProps {
 
 export function BriefCard({ brief }: BriefCardProps): React.ReactElement {
   return (
-    <Card variant="hover">
-      <CardHeader>
-        <CardTitle>{brief.title}</CardTitle>
-        <CardDescription>
+    <Card className="hover:shadow-lg transition-shadow duration-200">
+      <CardHeader className="space-y-4">
+        <CardTitle className="text-2xl">{brief.title}</CardTitle>
+        <CardDescription className="text-base">
           {brief.type.split("_").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")}
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <p className="text-gray-600 mb-6">{brief.description}</p>
+      <CardContent className="space-y-6">
+        <p className="text-gray-600">{brief.description}</p>
         <Link href={`/briefs/${brief.id}`}>
           <Button variant="outline" className="w-full">
             View Brief

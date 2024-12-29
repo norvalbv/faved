@@ -1,19 +1,14 @@
 import { cn } from "@/lib/utils"
 import { HTMLAttributes, forwardRef } from "react"
 
-interface CardProps extends HTMLAttributes<HTMLDivElement> {
-  variant?: "default" | "hover"
-}
+interface CardProps extends HTMLAttributes<HTMLDivElement> {}
 
 const Card = forwardRef<HTMLDivElement, CardProps>(
-  ({ className, variant = "default", ...props }, ref) => {
+  ({ className, ...props }, ref) => {
     return (
       <div
         className={cn(
-          "rounded-2xl border bg-white p-6",
-          {
-            "hover-card": variant === "hover",
-          },
+          "rounded-2xl border border-gray-100 bg-white p-8 shadow-sm",
           className
         )}
         ref={ref}
@@ -31,7 +26,7 @@ const CardHeader = forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col space-y-1.5", className)}
+    className={cn("flex flex-col", className)}
     {...props}
   />
 ))
@@ -44,7 +39,7 @@ const CardTitle = forwardRef<
   <h3
     ref={ref}
     className={cn(
-      "text-lg font-semibold leading-none tracking-tight",
+      "font-bold leading-none tracking-tight text-gray-900",
       className
     )}
     {...props}
@@ -58,7 +53,7 @@ const CardDescription = forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-sm text-gray-500", className)}
+    className={cn("text-gray-500", className)}
     {...props}
   />
 ))

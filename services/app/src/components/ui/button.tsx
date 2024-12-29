@@ -15,7 +15,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           {
             "bg-[#FF9F4A] text-black hover:bg-[#FF7A00]": variant === "primary",
             "bg-black text-white hover:bg-gray-800": variant === "default",
-            "border border-gray-200 bg-white hover:bg-gray-50": variant === "outline",
+            "border border-gray-200 bg-white text-gray-900 hover:bg-gray-50": variant === "outline",
             "hover:bg-gray-100": variant === "ghost",
             "h-10 px-4 py-2": size === "default",
             "h-9 px-3": size === "sm",

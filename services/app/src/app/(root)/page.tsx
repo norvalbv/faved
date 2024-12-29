@@ -35,14 +35,14 @@ const mockSubmissions: Submission[] = [
 
 export default function HomePage(): React.ReactElement {
   return (
-    <div className="relative">
+    <div className="min-h-screen bg-[#FAFAFA]">
       {/* Briefs Section */}
-      <section className="faved-section bg-gray-50">
+      <section className="py-16">
         <div className="faved-container">
           <div className="space-y-8">
             <div className="text-center space-y-4">
-              <h2 className="text-3xl font-bold">Available Briefs</h2>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              <h2 className="text-4xl font-bold text-gray-900">Available Briefs</h2>
+              <p className="text-xl text-gray-600">
                 Choose from our selection of brand collaboration opportunities.
               </p>
             </div>
@@ -55,7 +55,7 @@ export default function HomePage(): React.ReactElement {
       </section>
 
       {/* Recent Submissions */}
-      <section className="faved-section">
+      <section className="py-16 bg-white">
         <div className="faved-container">
           <SubmissionsSection submissions={mockSubmissions} />
         </div>
