@@ -1,40 +1,87 @@
 'use server'
 
-import { z } from 'zod'
-import type { Submission, SubmissionType } from '../types/submission'
+import { db } from '../../data-store'
+import { submissions } from '../../data-store/schema'
+import { nanoid } from 'nanoid'
+import { eq } from 'drizzle-orm'
+import { submissionSchema, type SubmissionData } from '../validations/submissions'
+import { requireAuth } from './auth'
 
-const submissionSchema = z.object({
-  briefId: z.string(),
-  type: z.enum(['video_topic', 'draft_script', 'draft_video', 'live_video']),
-  content: z.string(),
-})
+export async function createSubmission(data: SubmissionData) {
+  const user = await requireAuth('influencer')
+  const timestamp = new Date()
 
-export async function createSubmission(formData: FormData) {
-  const validatedFields = submissionSchema.safeParse({
-    briefId: formData.get('briefId'),
-    type: formData.get('type'),
-    content: formData.get('content'),
+  // Validate submission data
+  const validatedData = submissionSchema.parse(data)
+
+  // Create submission
+  const submissionId = nanoid()
+  await db.insert(submissions).values({
+    id: submissionId,
+    briefId: validatedData.briefId,
+    type: validatedData.type,
+    content: JSON.stringify(validatedData.content),
+    status: 'pending',
+    createdAt: timestamp,
+    updatedAt: timestamp,
   })
 
-  if (!validatedFields.success) {
-    return {
-      errors: validatedFields.error.flatten().fieldErrors,
-    }
-  }
-
-  // TODO: Save submission to data-store
   return {
     success: true,
-    data: validatedFields.data,
+    submissionId,
   }
 }
 
-export async function getSubmission(id: string): Promise<Submission | null> {
-  // TODO: Implement submission retrieval from data-store
-  return null
+export async function getSubmission(id: string) {
+  const user = await requireAuth()
+
+  const [submission] = await db
+    .select()
+    .from(submissions)
+    .where(eq(submissions.id, id))
+
+  if (!submission) {
+    throw new Error('Submission not found')
+  }
+
+  return {
+    ...submission,
+    content: JSON.parse(submission.content),
+  }
 }
 
-export async function listSubmissions(briefId: string): Promise<Submission[]> {
-  // TODO: Implement submission listing from data-store
-  return []
+export async function listSubmissions(briefId?: string) {
+  const user = await requireAuth()
+
+  let query = db.select().from(submissions)
+  if (briefId) {
+    query = query.where(eq(submissions.briefId, briefId))
+  }
+
+  const results = await query
+
+  return results.map(submission => ({
+    ...submission,
+    content: JSON.parse(submission.content),
+  }))
+}
+
+export async function updateSubmissionStatus(
+  id: string,
+  status: 'approved' | 'rejected'
+) {
+  const user = await requireAuth('brand')
+  const timestamp = new Date()
+
+  await db
+    .update(submissions)
+    .set({
+      status,
+      updatedAt: timestamp,
+    })
+    .where(eq(submissions.id, id))
+
+  return {
+    success: true,
+  }
 } 
