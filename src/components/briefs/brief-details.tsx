@@ -1,8 +1,9 @@
 import { ReactElement } from "react"
 import type { Brief } from "@/lib/types/brief"
 import { Badge } from "@/src/components/ui/badge"
+import { Button } from "@/src/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, ArrowRight } from "lucide-react"
 import Link from "next/link"
 
 interface BriefDetailsProps {
@@ -12,16 +13,24 @@ interface BriefDetailsProps {
 export const BriefDetails = ({ brief }: BriefDetailsProps): ReactElement => {
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/briefs" className="text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-6 w-6" />
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold">{brief.title}</h1>
-          <Badge variant="outline" className="mt-2 capitalize">
-            {brief.type.replace("_", " ")}
-          </Badge>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/briefs" className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-6 w-6" />
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold">{brief.title}</h1>
+            <Badge variant="outline" className="mt-2 capitalize">
+              {brief.type.replace("_", " ")}
+            </Badge>
+          </div>
         </div>
+        <Link href={`/submissions/new?briefId=${brief.id}`}>
+          <Button size="lg">
+            Start Submission
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </Link>
       </div>
 
       <Card>
@@ -42,7 +51,7 @@ export const BriefDetails = ({ brief }: BriefDetailsProps): ReactElement => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Collaboration Timeline</CardTitle>
+          <CardTitle>Submission Timeline</CardTitle>
         </CardHeader>
         <CardContent>
           <ol className="relative space-y-6 border-l border-muted">
@@ -51,10 +60,19 @@ export const BriefDetails = ({ brief }: BriefDetailsProps): ReactElement => {
                 <div className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-background border border-muted">
                   <span className="text-sm font-medium">{step.step}</span>
                 </div>
-                <h3 className="font-medium">{step.title}</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {step.description}
-                </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">{step.title}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {step.description}
+                    </p>
+                  </div>
+                  <Link href={`/submissions/new?briefId=${brief.id}&stage=${step.step}`}>
+                    <Button variant="outline" size="sm">
+                      Submit for this stage
+                    </Button>
+                  </Link>
+                </div>
               </li>
             ))}
           </ol>
