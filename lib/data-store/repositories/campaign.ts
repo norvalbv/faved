@@ -85,45 +85,27 @@ export class CampaignRepository {
     const id = data.id || nanoid()
     const now = new Date()
 
-    // Use a transaction to ensure atomicity
-    return await drizzleDb.transaction(async (tx) => {
-      // Check if campaign exists for this brief
-      const [existing] = await tx
-        .select()
-        .from(campaigns)
-        .where(eq(campaigns.briefId, data.briefId))
-        .limit(1)
-        .execute()
+    // Create new campaign
+    const campaign = {
+      id,
+      title: data.title,
+      description: data.description,
+      status: data.status,
+      briefId: data.briefId,
+      projectId: data.projectId || 'milanote_project_001', // Use default project ID if not provided
+      metadata: data.metadata || {},
+      createdAt: now,
+      updatedAt: now,
+    }
 
-      if (existing) {
-        return {
-          ...existing,
-          metadata: existing.metadata as Record<string, unknown> | null
-        }
-      }
+    await drizzleDb
+      .insert(campaigns)
+      .values(campaign)
+      .execute()
 
-      // Create new campaign if none exists
-      const campaign = {
-        id,
-        title: data.title,
-        description: data.description,
-        status: data.status,
-        briefId: data.briefId,
-        projectId: data.projectId || 'milanote_project_001', // Use default project ID if not provided
-        metadata: data.metadata || {},
-        createdAt: now,
-        updatedAt: now,
-      }
-
-      await tx
-        .insert(campaigns)
-        .values(campaign)
-        .execute()
-
-      return {
-        ...campaign,
-        metadata: campaign.metadata as Record<string, unknown> | null
-      }
-    })
+    return {
+      ...campaign,
+      metadata: campaign.metadata as Record<string, unknown> | null
+    }
   }
 } 

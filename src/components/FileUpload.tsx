@@ -1,134 +1,153 @@
 'use client'
 
-import { ReactElement, useState } from 'react'
+import { ReactElement, useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
+import { Cloud, File, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { importSubmissions } from '@/lib/actions/import'
+import { Progress } from './ui/progress'
 import { Button } from './ui/button'
-import { cn } from '@/lib/utils'
-import { Loader2 } from 'lucide-react'
-import { Alert, AlertDescription, AlertTitle } from './ui/alert'
-import { createSubmission } from '@/lib/actions/submissions'
-import type { SubmissionMetadata } from '@/lib/types/submission'
 
 interface FileUploadProps {
-  briefId: string
-  onUploadComplete?: (campaignId: string) => void
-  mode?: 'import' | 'submission'
-  accept?: Record<string, string[]>
-  submissionType?: 'draft_video' | 'final_video'
+  mode?: 'import' | 'brief'
+  onUploadComplete?: (url: string) => void
+  briefId?: string
 }
 
 export const FileUpload = ({ 
-  briefId, 
+  mode = 'import',
   onUploadComplete,
-  mode = 'submission',
-  accept = {
-    'video/*': ['.mp4', '.mov', '.avi'],
-    'image/*': ['.jpg', '.jpeg', '.png'],
-    'application/pdf': ['.pdf']
-  },
-  submissionType = 'draft_video'
+  briefId 
 }: FileUploadProps): ReactElement => {
   const [isUploading, setIsUploading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: mode === 'import' ? { 'text/csv': ['.csv'] } : accept,
-    maxFiles: 1,
-    disabled: isUploading,
-    onDrop: async (files) => {
-      if (files.length === 0) return
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    try {
+      const file = acceptedFiles[0]
+      if (!file) return
 
       setIsUploading(true)
-      setError(null)
+      setUploadProgress(0)
 
-      try {
-        const file = files[0]
-        
-        // TODO: Implement actual file upload logic here
-        // For now, simulating with a fake URL
-        const fakeUrl = `https://storage.example.com/${file.name}`
-        setUploadedFileUrl(fakeUrl)
+      if (mode === 'import') {
+        // Handle CSV import
+        if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+          toast.error('Please upload a CSV file')
+          return
+        }
 
-        // Create submission with the uploaded file URL
-        const submissionResult = await createSubmission({
-          briefId,
-          content: fakeUrl,
-          metadata: {
-            type: submissionType,
-            message: `Uploaded file: ${file.name}`,
-            stageId: submissionType === 'draft_video' ? '2' : '3',
-            input: fakeUrl,
-            sender: 'Anonymous',
-            submitted: true
+        // Read file content
+        const content = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = (e) => resolve(e.target?.result as string)
+          reader.onerror = (e) => reject(e)
+          reader.onprogress = (e) => {
+            if (e.lengthComputable) {
+              setUploadProgress((e.loaded / e.total) * 100)
+            }
           }
+          reader.readAsText(file)
         })
 
-        if (submissionResult.success && onUploadComplete) {
-          onUploadComplete(submissionResult.campaignId || '')
+        // Import submissions
+        const result = await importSubmissions(content)
+        
+        if (result.success) {
+          toast.success(result.message)
+          
+          // Show details of any failures
+          const failures = result.details.filter(r => !r.success)
+          if (failures.length > 0) {
+            failures.forEach(failure => {
+              toast.error(`Row ${failure.id}: ${failure.error}`)
+            })
+          }
         } else {
-          setError(submissionResult.error || 'Failed to create submission')
+          toast.error(result.message)
         }
-      } catch (error) {
-        console.error('Error uploading file:', error)
-        setError('Failed to upload file')
-      } finally {
-        setIsUploading(false)
+      } else {
+        // Handle brief file upload
+        // TODO: Implement actual file upload logic
+        const fakeUrl = `https://storage.example.com/${file.name}`
+        setUploadProgress(50)
+        
+        if (onUploadComplete) {
+          onUploadComplete(fakeUrl)
+        }
+        
+        toast.success('File uploaded successfully')
+        setUploadProgress(100)
       }
-    },
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      toast.error('Failed to upload file')
+    } finally {
+      setIsUploading(false)
+      setUploadProgress(0)
+    }
+  }, [mode, onUploadComplete])
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: mode === 'import' 
+      ? { 'text/csv': ['.csv'] }
+      : {
+          'video/*': ['.mp4', '.mov', '.avi'],
+          'audio/*': ['.mp3', '.wav'],
+          'image/*': ['.jpg', '.jpeg', '.png', '.gif'],
+          'application/pdf': ['.pdf']
+        },
+    maxFiles: 1,
+    multiple: false
   })
 
   return (
-    <div className="space-y-4">
+    <div className="grid gap-4">
       <div
         {...getRootProps()}
-        className={cn(
-          'border-2 border-dashed rounded-lg p-8 text-center transition-colors',
-          isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/20 hover:border-primary',
-          isUploading && 'opacity-50 cursor-not-allowed'
-        )}
+        className="relative grid cursor-pointer place-items-center gap-4 rounded-lg border-2 border-dashed border-gray-300 p-12 text-center transition-colors hover:bg-gray-50"
       >
         <input {...getInputProps()} />
-        <div className="space-y-2">
-          <p className="text-sm font-medium">
-            {isDragActive 
-              ? 'Drop the file here' 
-              : mode === 'import' 
-                ? 'Drag and drop your CSV file here'
-                : 'Drag and drop your file here'}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {mode === 'import' 
-              ? 'Accepts CSV files'
-              : 'Accepts video, image, and PDF files'}
-          </p>
-          <Button type="button" variant="outline" disabled={isUploading}>
-            {isUploading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Uploading...
-              </>
-            ) : (
-              'Or click to select file'
-            )}
-          </Button>
+        <div className="grid place-items-center gap-2">
+          {isUploading ? (
+            <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+          ) : (
+            <Cloud className="h-8 w-8 text-gray-500" />
+          )}
+          <div className="grid gap-1">
+            <p className="text-sm font-medium text-gray-900">
+              {isDragActive 
+                ? 'Drop your file here' 
+                : mode === 'import'
+                  ? 'Drag & drop your CSV file here'
+                  : 'Drag & drop your file here'}
+            </p>
+            <p className="text-xs text-gray-500">
+              {mode === 'import' 
+                ? 'CSV files only, up to 10MB'
+                : 'Video, audio, image, or PDF files, up to 100MB'}
+            </p>
+          </div>
         </div>
+        {!isUploading && (
+          <Button type="button" size="sm" className="absolute bottom-4 opacity-60">
+            Select File
+          </Button>
+        )}
       </div>
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {uploadedFileUrl && !error && (
-        <Alert>
-          <AlertTitle>Upload Complete</AlertTitle>
-          <AlertDescription>
-            Your file has been uploaded successfully.
-          </AlertDescription>
-        </Alert>
+      {isUploading && (
+        <div className="grid gap-2">
+          <div className="flex items-center gap-2">
+            <File className="h-4 w-4 text-blue-500" />
+            <div className="flex-1 text-sm font-medium">
+              {mode === 'import' ? 'Processing submissions...' : 'Uploading file...'}
+            </div>
+            <div className="text-xs text-gray-500">{Math.round(uploadProgress)}%</div>
+          </div>
+          <Progress value={uploadProgress} />
+        </div>
       )}
     </div>
   )
