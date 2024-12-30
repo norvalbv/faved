@@ -1,123 +1,80 @@
 'use server'
 
-import { parse } from 'csv-parse'
-import { requireAuth } from '../utils/auth'
-import { SubmissionRepository } from '../data-store/repositories/submission'
-import { FeedbackRepository } from '../data-store/repositories/feedback'
-import { BriefRepository } from '../data-store/repositories/brief'
+import { SubmissionRepository } from '@/lib/data-store/repositories/submission'
+import { auth } from '@/lib/utils/auth'
 
-interface ActivityRecord {
-  id: string
-  createdAt: string
-  campaignId: string
-  offerId: string
-  sender: string
-  message: string
-  type: string
-  userId: string
-  stageId: string
-  input: string
-  dateInput: string
-  attachments: string
-  submitted: string
-  approved: string
-  feedback: string
-  feedbackAttachments: string
-}
+const BRIEF_ID = 'visual-creator-brief-1'
 
-const mapSubmissionType = (type: string): 'video_topic' | 'draft_script' | 'draft_video' | 'live_video' => {
-  switch (type) {
-    case 'draft_script':
-    case 'draft_video':
-    case 'live_video':
-      return type
+function mapSubmissionType(type: string) {
+  switch (type.toLowerCase()) {
+    case 'video topic':
+      return 'video_topic' as const
+    case 'draft script':
+      return 'draft_script' as const
+    case 'draft video':
+      return 'draft_video' as const
+    case 'live video':
+      return 'live_video' as const
     default:
-      return 'video_topic'
+      throw new Error(`Invalid submission type: ${type}`)
   }
 }
 
-// Map all campaign IDs to our visual creator brief
-const BRIEF_ID = 'visual-creator-brief-1'
-
-export async function importActivities(fileContent: string) {
+export async function importSubmissions(file: File) {
   try {
-    // Only allow brand users to import data
-    await requireAuth('brand')
+    // 1. Verify user is logged in
+    const { userId } = auth()
+    if (!userId) {
+      throw new Error('Unauthorized')
+    }
 
-    const records: ActivityRecord[] = []
-    
-    // Parse CSV content
-    const parser = parse(fileContent, {
-      columns: true,
-      skip_empty_lines: true,
+    // 2. Parse CSV file
+    const text = await file.text()
+    const records = text.split('\n').slice(1).map(line => {
+      const [type, input, status] = line.split(',').map(s => s.trim())
+      return { type, input, status }
     })
 
-    // Process each record
-    for await (const record of parser) {
-      records.push(record)
-    }
-
-    // Process records chronologically
-    records.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-
-    // Keep track of processed records
-    const skippedRecords: ActivityRecord[] = []
-    const successfulRecords: ActivityRecord[] = []
-
-    // Verify brief exists
-    const brief = await BriefRepository.getById(BRIEF_ID)
-    if (!brief) {
-      throw new Error('Visual creator brief not found')
-    }
-
+    // 3. Process each record
+    const results = []
     for (const record of records) {
       try {
-        // Skip if no input
-        if (!record.input) {
-          console.warn('Skipping record without input:', record)
-          skippedRecords.push(record)
+        // Skip empty lines
+        if (!record.type || !record.input) {
           continue
         }
 
         // Create submission
         const submission = await SubmissionRepository.create({
           briefId: BRIEF_ID,
+          influencerId: userId,
           type: mapSubmissionType(record.type),
           content: record.input,
-          status: record.approved === 'true' ? 'approved' : 'pending'
+          status: record.status === 'approved' ? 'approved' : 'pending',
         })
 
-        // Create feedback if exists
-        if (record.feedback && submission) {
-          await FeedbackRepository.create({
-            submissionId: submission.id,
-            type: record.approved === 'true' ? 'approval' : 'suggestion',
-            content: record.feedback
-          })
-        }
-
-        successfulRecords.push(record)
+        results.push({
+          success: true,
+          data: submission,
+        })
       } catch (error) {
         console.error('Error processing record:', error)
-        skippedRecords.push(record)
+        results.push({
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        })
       }
     }
 
-    if (skippedRecords.length > 0) {
-      console.warn(`Skipped ${skippedRecords.length} records:`, skippedRecords)
-    }
-
-    return { 
+    return {
       success: true,
-      processed: successfulRecords.length,
-      skipped: skippedRecords.length,
-      details: {
-        successful: successfulRecords,
-        skipped: skippedRecords
-      }
+      results,
     }
   } catch (error) {
-    console.error('Import failed:', error)
-    throw error
+    console.error('Error importing submissions:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }
   }
 } 

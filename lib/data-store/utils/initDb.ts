@@ -1,32 +1,24 @@
-import { Database } from "bun:sqlite";
-import { drizzle } from "drizzle-orm/bun-sqlite";
-import { migrate } from "drizzle-orm/bun-sqlite/migrator";
-import { join } from "path";
+import { drizzle } from 'drizzle-orm/postgres-js'
+import postgres from 'postgres'
+import { migrate } from 'drizzle-orm/postgres-js/migrator'
+import { join } from 'path'
 
-const dbPath = join(process.cwd(), "sqlite.db");
+const connectionString = process.env.DATABASE_URL!
+const client = postgres(connectionString)
+export const db = drizzle(client)
 
-// Create/connect to SQLite database
-const sqlite = new Database(dbPath, { create: true });
-export const db = drizzle(sqlite);
-
-export const initDb = async () => {
+export async function initDb() {
   try {
-    console.log('Initializing database...');
+    console.log('Initializing database...')
     
-    // Run migrations from the drizzle folder
-    migrate(db, {
-      migrationsFolder: join(process.cwd(), "drizzle")
-    });
+    await migrate(db, {
+      migrationsFolder: join(process.cwd(), 'drizzle'),
+    })
 
-    console.log('✅ Database initialized successfully');
-    return db;
+    console.log('✅ Database initialized successfully')
+    return db
   } catch (error) {
-    console.error('❌ Failed to initialize database:', error);
-    throw error;
+    console.error('❌ Failed to initialize database:', error)
+    throw error
   }
-};
-
-// Run initialization if this file is executed directly
-if (import.meta.main) {
-  await initDb();
 } 

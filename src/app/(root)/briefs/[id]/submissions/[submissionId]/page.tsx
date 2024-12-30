@@ -5,11 +5,12 @@ import { formatDistanceToNow } from "date-fns"
 import { cn } from "@/lib/utils"
 import { GAME_DESIGN_BRIEF } from "@/lib/data-store/constants/briefs"
 import { FeedbackSection } from "@/src/components/submissions/feedback-section"
-import type { SubmissionFeedback } from "@/src/types/submission"
+import type { Feedback } from "@/lib/data-store/schema/feedback"
 
 interface SubmissionPageProps {
   params: {
     id: string
+    submissionId: string
   }
 }
 
@@ -26,14 +27,14 @@ const mockSubmission = {
 }
 
 // Mock feedback data
-const mockFeedback: SubmissionFeedback[] = [
+const mockFeedback: Feedback[] = [
   {
     id: "1",
     submissionId: "1",
-    type: "suggestion" as const,
+    type: "suggestion",
     content: "Consider adding more details about how Milanote can be used for character design documentation.",
     createdAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-    reviewerId: "reviewer-1",
+    updatedAt: new Date(Date.now() - 30 * 60 * 1000),
   },
 ]
 
@@ -43,10 +44,10 @@ export const metadata: Metadata = {
 }
 
 export default async function SubmissionPage({ params }: SubmissionPageProps): Promise<React.ReactElement> {
-  const submissionId = await Promise.resolve(params.id)
+  const { id: briefId, submissionId } = params
   
-  // In a real app, we would fetch the submission
-  if (submissionId !== mockSubmission.id) {
+  // In a real app, we would fetch the submission and verify it belongs to the brief
+  if (submissionId !== mockSubmission.id || briefId !== mockSubmission.briefId) {
     notFound()
   }
 
@@ -58,7 +59,7 @@ export default async function SubmissionPage({ params }: SubmissionPageProps): P
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold tracking-tight">Submission Details</h1>
             <Link
-              href={`/briefs/${mockSubmission.briefId}`}
+              href={`/briefs/${briefId}`}
               className="text-sm text-primary hover:underline"
             >
               View Brief
@@ -116,4 +117,4 @@ export default async function SubmissionPage({ params }: SubmissionPageProps): P
       </div>
     </main>
   )
-} 
+}

@@ -6,6 +6,7 @@ import { nanoid } from 'nanoid'
 export class SubmissionRepository {
   static async create(data: {
     briefId: string
+    influencerId: string
     type: 'video_topic' | 'draft_script' | 'draft_video' | 'live_video'
     content: string
     status?: 'pending' | 'approved' | 'rejected'

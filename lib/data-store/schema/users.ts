@@ -1,14 +1,14 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
+import { pgTable, text, timestamp, jsonb } from 'drizzle-orm/pg-core'
 
-export const users = sqliteTable('users', {
+export const users = pgTable('users', {
   id: text('id').primaryKey(),
   clerkId: text('clerk_id').notNull().unique(),
   email: text('email').notNull(),
   name: text('name').notNull(),
   role: text('role', { enum: ['influencer', 'brand'] }).notNull(),
-  metadata: text('metadata', { mode: 'json' }).notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  metadata: jsonb('metadata').notNull(),
+  createdAt: timestamp('created_at').notNull(),
+  updatedAt: timestamp('updated_at').notNull(),
 })
 
 export type User = typeof users.$inferSelect

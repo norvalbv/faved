@@ -1,21 +1,21 @@
 "use client"
 
 import { useState } from "react"
-import type { SubmissionFeedback } from "@/types/submission"
+import type { Feedback } from "@/lib/data-store/schema/feedback"
 
 interface FeedbackFormProps {
   submissionId: string
-  onSubmit: (data: Omit<SubmissionFeedback, "id" | "createdAt" | "reviewerId">) => void
+  onSubmit: (data: Omit<Feedback, "id" | "createdAt" | "updatedAt">) => void
 }
 
 const FEEDBACK_TYPES = [
-  { value: "correction", label: "Needs Correction" },
   { value: "suggestion", label: "Suggestion" },
   { value: "approval", label: "Approval" },
+  { value: "rejection", label: "Rejection" },
 ] as const
 
 export const FeedbackForm = ({ submissionId, onSubmit }: FeedbackFormProps): React.ReactElement => {
-  const [type, setType] = useState<SubmissionFeedback["type"]>("suggestion")
+  const [type, setType] = useState<Feedback["type"]>("suggestion")
   const [content, setContent] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -44,7 +44,7 @@ export const FeedbackForm = ({ submissionId, onSubmit }: FeedbackFormProps): Rea
         <select
           id="type"
           value={type}
-          onChange={(e) => setType(e.target.value as SubmissionFeedback["type"])}
+          onChange={(e) => setType(e.target.value as Feedback["type"])}
           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
           required
         >

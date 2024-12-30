@@ -1,63 +1,46 @@
-import { Metadata } from "next"
-import { GAME_DESIGN_BRIEF } from "@/lib/data-store/constants/briefs"
-import { FilteredSubmissions } from "@/src/components/submissions/filtered-submissions"
-import type { Submission } from "@/src/types/submission"
+import { ReactElement } from 'react'
+import { Metadata } from 'next'
+import { SubmissionRepository } from '@/lib/data-store/repositories/submission'
+import { SubmissionList } from '@/src/components/submissions/submission-list'
 
-export const metadata: Metadata = {
-  title: "Submissions | Content Review Platform",
-  description: "View and manage content submissions",
+interface Submission {
+  id: string
+  briefId: string
+  type: 'video_topic' | 'draft_script' | 'draft_video' | 'live_video'
+  content: string
+  status: 'pending' | 'approved' | 'rejected'
+  createdAt: Date
 }
 
-// Mock data - in a real app this would come from an API
-const mockSubmissions: Submission[] = [
-  {
-    id: "1",
-    type: "video_topic",
-    content: "Game Design Workflow Overview",
-    status: "pending",
-    briefId: GAME_DESIGN_BRIEF.id,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    influencerId: "user-1",
-  },
-  {
-    id: "2",
-    type: "draft_script",
-    content: "Character Design Process",
-    status: "approved",
-    briefId: GAME_DESIGN_BRIEF.id,
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-    updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-    influencerId: "user-1",
-  },
-  {
-    id: "3",
-    type: "draft_video",
-    content: "Level Design Walkthrough",
-    status: "rejected",
-    briefId: GAME_DESIGN_BRIEF.id,
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    influencerId: "user-1",
-  },
-]
+export const metadata: Metadata = {
+  title: 'All Submissions | Content Review Platform',
+  description: 'View and manage all content submissions',
+}
 
-export default async function SubmissionsPage(): Promise<React.ReactElement> {
+export default async function SubmissionsPage(): Promise<ReactElement> {
+  // In a real app, we would fetch all submissions
+  const submissions = await SubmissionRepository.list()
+
   return (
-    <main className="container mx-auto px-4 py-8">
-      <div className="mx-auto max-w-5xl space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight">Submissions</h1>
-            <p className="text-lg text-muted-foreground">
-              View and manage your content submissions
-            </p>
+    <main className="min-h-screen bg-[#FAFAFA]">
+      <div className="py-8">
+        <div className="faved-container">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-3xl font-bold tracking-tight">All Submissions</h1>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <SubmissionList 
+                submissions={submissions}
+                links={submissions.map(s => ({
+                  id: s.id,
+                  href: `/briefs/${s.briefId}/submissions/${s.id}`
+                }))}
+              />
+            </div>
           </div>
         </div>
-
-        {/* Filtered Submissions */}
-        <FilteredSubmissions initialSubmissions={mockSubmissions} />
       </div>
     </main>
   )

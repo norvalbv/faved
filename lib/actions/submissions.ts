@@ -42,11 +42,13 @@ export async function listSubmissions(briefId?: string) {
   }
 }
 
-export async function createSubmission(data: {
+interface CreateSubmissionData {
   briefId: string
   type: 'video_topic' | 'draft_script' | 'draft_video' | 'live_video'
   content: string
-}) {
+}
+
+export async function createSubmission(data: CreateSubmissionData) {
   try {
     // 1. Verify user is logged in
     const { userId } = auth()
@@ -55,11 +57,14 @@ export async function createSubmission(data: {
     }
 
     // 2. Create submission
-    await SubmissionRepository.create(data)
+    await SubmissionRepository.create({
+      ...data,
+      influencerId: userId,
+    })
 
     return { success: true }
   } catch (error) {
     console.error('Error creating submission:', error)
-    throw error
+    return { success: false, error: 'Failed to create submission' }
   }
 } 
