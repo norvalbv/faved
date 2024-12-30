@@ -4,10 +4,9 @@ import { SubmissionRepository } from '../data-store/repositories/submission'
 import { CampaignRepository } from '../data-store/repositories/campaign'
 import { BriefRepository } from '../data-store/repositories/brief'
 import { Submission, SubmissionMetadata } from '../types/submission'
-import type { BriefMetadata } from '../types/brief'
 import { auth } from '../utils/auth'
 import { nanoid } from 'nanoid'
-import { analyzeSubmission } from '../services/ai'
+import { analyzeSubmission } from './analyze'
 
 export async function getSubmission(id: string) {
   try {
@@ -67,7 +66,7 @@ export async function listRecentSubmissions(limit: number = 5): Promise<Submissi
 export async function createSubmission(data: {
   briefId: string
   content: string
-  metadata: Omit<SubmissionMetadata, 'userId'>
+  metadata: Omit<SubmissionMetadata, 'userId'> & { isHistoricalImport?: boolean }
 }) {
   try {
     // 1. Verify user is logged in
@@ -76,30 +75,28 @@ export async function createSubmission(data: {
       throw new Error('Unauthorized')
     }
 
-    // 2. Get brief details for AI analysis
+    // 2. Get the brief for AI analysis
     const brief = await BriefRepository.getById(data.briefId)
     if (!brief) {
       throw new Error('Brief not found')
     }
 
-    // Cast brief to correct type
+    // Cast brief metadata to expected type
     const briefWithMetadata = {
       ...brief,
-      metadata: brief.metadata as BriefMetadata
+      metadata: {
+        overview: {
+          what: brief.description,
+          gettingStarted: (brief.metadata as { gettingStarted?: string } | undefined)?.gettingStarted || ''
+        },
+        guidelines: (brief.metadata as { guidelines?: { category: string; items: string[] }[] } | undefined)?.guidelines || [{
+          category: 'Requirements',
+          items: [brief.description]
+        }]
+      }
     }
 
-    // 3. Get AI feedback
-    console.log('Getting AI feedback...')
-    const aiFeedback = await analyzeSubmission({ content: data.content }, briefWithMetadata)
-    console.log('AI Feedback received:', aiFeedback)
-
-    // Check if AI rejected the submission
-    const isRejected = aiFeedback.includes('{{reject}}')
-    const feedbackText = isRejected 
-      ? aiFeedback.split('REASON:')[1]?.trim() 
-      : aiFeedback
-
-    // 4. Find or create campaign
+    // 3. Find or create campaign
     const campaign = await CampaignRepository.findByBriefId(data.briefId)
     let campaignId: string
 
@@ -121,44 +118,62 @@ export async function createSubmission(data: {
       campaignId = newCampaign.id
     }
 
-    // 5. Create submission with AI feedback
-    const feedbackHistory = [{
-      feedback: feedbackText,
-      createdAt: new Date().toISOString(),
-      status: isRejected ? 'rejected' : 'comment',
-      isAiFeedback: true
-    }]
+    // 4. Perform AI analysis if not a historical import
+    let feedbackHistory = data.metadata.feedbackHistory || []
+    if (!data.metadata.isHistoricalImport) {
+      try {
+        const mockSubmission: Submission = {
+          id: nanoid(), // Temporary ID for analysis
+          type: 'submission',
+          content: data.content,
+          metadata: data.metadata as SubmissionMetadata,
+          projectId: data.briefId,
+          campaignId,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
 
-    console.log('Feedback history:', feedbackHistory)
+        const aiAnalysis = await analyzeSubmission(mockSubmission, briefWithMetadata)
+        
+        // Format AI feedback
+        const formattedAnalysis = [
+          aiAnalysis.matches.length > 0 && `ANALYSIS:\n${aiAnalysis.matches.map(m => `${m.category}:\n${m.items.join('\n')}`).join('\n\n')}`,
+          aiAnalysis.mismatches.length > 0 && `AREAS FOR IMPROVEMENT:\n${aiAnalysis.mismatches.map(m => `${m.category}:\n${m.items.join('\n')}`).join('\n\n')}`,
+          aiAnalysis.brandSafety.issues.length > 0 && `BRAND SAFETY ISSUES:\n${aiAnalysis.brandSafety.issues.join('\n')}`,
+          aiAnalysis.sellingPoints.missing.length > 0 && `MISSING KEY POINTS:\n${aiAnalysis.sellingPoints.missing.join('\n')}`
+        ].filter(Boolean).join('\n\n')
+        
+        const isRejected = !aiAnalysis.brandSafety.pass
+        
+        feedbackHistory.push({
+          feedback: formattedAnalysis,
+          createdAt: new Date().toISOString(),
+          status: isRejected ? 'rejected' : 'comment',
+          isAiFeedback: true
+        })
 
-    const submissionMetadata = {
-      type: data.metadata.type,
-      input: data.metadata.input,
-      sender: data.metadata.sender,
-      userId,
-      message: data.metadata.message,
-      stageId: isRejected ? '3' : '1', // Set to stage 3 if rejected
-      status: isRejected ? 'rejected' : 'pending',
-      submitted: true,
-      feedbackHistory
+        // Update metadata with rejection status
+        data.metadata.status = isRejected ? 'rejected' : 'pending'
+        data.metadata.stageId = isRejected ? '3' : '1' // Stage 3 for rejected, Stage 1 for pending
+      } catch (error) {
+        console.error('AI analysis failed:', error)
+        // Continue with submission creation even if AI analysis fails
+      }
     }
 
-    console.log('Final metadata before creation:', submissionMetadata)
+    // 5. Create submission
+    await SubmissionRepository.create({
+      campaignId,
+      type: 'submission',
+      content: data.content,
+      metadata: {
+        ...data.metadata,
+        userId,
+        feedbackHistory
+      }
+    })
 
-    try {
-      await SubmissionRepository.create({
-        campaignId,
-        type: 'submission',
-        content: data.content,
-        metadata: submissionMetadata
-      })
-
-      console.log('Submission created successfully')
-      return { success: true, campaignId }
-    } catch (error) {
-      console.error('Error in final submission creation:', error)
-      throw error
-    }
+    return { success: true, campaignId }
   } catch (error) {
     console.error('Error creating submission:', error)
     return { success: false, error: 'Failed to create submission' }

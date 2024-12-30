@@ -1,7 +1,8 @@
 'use server'
 
-import type { Brief } from '../types/brief'
+import type { Brief, BriefMetadata } from '../types/brief'
 import type { Submission } from '../types/submission'
+import { analyzeSubmission as aiAnalyze } from '../services/ai'
 
 interface AnalysisResult {
   matches: {
@@ -22,124 +23,85 @@ interface AnalysisResult {
   }
 }
 
+interface BriefWithMetadata extends Omit<Brief, 'metadata'> {
+  metadata: BriefMetadata
+}
+
 export async function analyzeSubmission(
   submission: Submission,
   brief: Brief
 ): Promise<AnalysisResult> {
+  // Cast brief to include required metadata
+  const briefWithMetadata: BriefWithMetadata = {
+    ...brief,
+    metadata: brief.metadata || {
+      overview: {
+        what: brief.description,
+        gettingStarted: ''
+      },
+      guidelines: [{
+        category: 'Requirements',
+        items: [brief.description]
+      }]
+    }
+  }
+
+  // Get AI analysis
+  const aiResponse = await aiAnalyze(submission, briefWithMetadata)
+  
+  // Parse AI response
   const result: AnalysisResult = {
     matches: [],
     mismatches: [],
     brandSafety: {
       issues: [],
-      pass: true,
+      pass: !aiResponse.includes('{{reject}}')
     },
     sellingPoints: {
       covered: [],
-      missing: [],
-    },
-  }
-
-  // Check brand safety guidelines
-  const brandSafetyIssues = checkBrandSafety(submission.content)
-  if (brandSafetyIssues.length > 0) {
-    result.brandSafety = {
-      issues: brandSafetyIssues,
-      pass: false,
+      missing: []
     }
   }
 
-  // Check guidelines compliance
-  for (const guideline of brief.guidelines) {
-    const { matches, mismatches } = checkGuidelineCompliance(
-      submission.content,
-      guideline
-    )
-    
-    if (matches.length > 0) {
-      result.matches.push({
-        category: guideline.category,
-        items: matches,
-      })
-    }
-    
-    if (mismatches.length > 0) {
-      result.mismatches.push({
-        category: guideline.category,
-        items: mismatches,
-      })
+  // Extract rejection reason if present
+  if (aiResponse.includes('{{reject}}')) {
+    const reasonMatch = aiResponse.match(/REASON:\s*(.+?)(?:\n|$)/)
+    if (reasonMatch) {
+      result.brandSafety.issues.push(reasonMatch[1].trim())
     }
   }
 
-  // Check key selling points
-  const { covered, missing } = checkSellingPoints(
-    submission.content,
-    brief.overview.what
-  )
-  result.sellingPoints = { covered, missing }
+  // Extract sections from AI response
+  const sections = aiResponse.split('\n\n')
+  for (const section of sections) {
+    if (section.startsWith('ANALYSIS:')) {
+      const items = section.replace('ANALYSIS:', '').trim().split('\n').filter(Boolean)
+      if (items.length > 0) {
+        result.matches.push({
+          category: 'Analysis',
+          items
+        })
+      }
+    } else if (section.startsWith('AREAS FOR IMPROVEMENT:')) {
+      const items = section.replace('AREAS FOR IMPROVEMENT:', '').trim().split('\n').filter(Boolean)
+      if (items.length > 0) {
+        result.mismatches.push({
+          category: 'Improvements',
+          items
+        })
+      }
+    } else if (section.startsWith('BRAND SAFETY ISSUES:')) {
+      const items = section.replace('BRAND SAFETY ISSUES:', '').trim().split('\n').filter(Boolean)
+      if (items.length > 0) {
+        result.brandSafety.issues.push(...items)
+      }
+    } else if (section.startsWith('MISSING KEY POINTS:')) {
+      const items = section.replace('MISSING KEY POINTS:', '').trim().split('\n').filter(Boolean)
+      if (items.length > 0) {
+        result.sellingPoints.missing.push(...items)
+      }
+    }
+  }
 
   return result
-}
-
-function checkBrandSafety(content: string): string[] {
-  const issues: string[] = []
-  const unsafeContent = [
-    'explicit adult themes',
-    'explicit language',
-    'explicit imagery',
-    'polarising political',
-    'personal attacks',
-    'targeted harassment',
-    'unverified theories',
-  ]
-
-  for (const unsafe of unsafeContent) {
-    if (content.toLowerCase().includes(unsafe)) {
-      issues.push(`Contains ${unsafe}`)
-    }
-  }
-
-  return issues
-}
-
-function checkGuidelineCompliance(
-  content: string,
-  guideline: { category: string; items: string[] }
-): { matches: string[]; mismatches: string[] } {
-  const matches: string[] = []
-  const mismatches: string[] = []
-
-  for (const item of guideline.items) {
-    // Simple text matching for now, could be enhanced with NLP
-    if (content.toLowerCase().includes(item.toLowerCase())) {
-      matches.push(item)
-    } else {
-      mismatches.push(item)
-    }
-  }
-
-  return { matches, mismatches }
-}
-
-function checkSellingPoints(content: string, overview: string): {
-  covered: string[]
-  missing: string[]
-} {
-  // Extract key points from overview
-  const keyPoints = overview
-    .split('.')
-    .map(point => point.trim())
-    .filter(point => point.length > 0)
-
-  const covered: string[] = []
-  const missing: string[] = []
-
-  for (const point of keyPoints) {
-    if (content.toLowerCase().includes(point.toLowerCase())) {
-      covered.push(point)
-    } else {
-      missing.push(point)
-    }
-  }
-
-  return { covered, missing }
 } 
