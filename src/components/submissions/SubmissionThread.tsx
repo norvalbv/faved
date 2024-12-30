@@ -5,8 +5,7 @@ import { Button } from '@/src/components/ui/button'
 import { Textarea } from '@/src/components/ui/textarea'
 import { formatDistanceToNow } from 'date-fns'
 import { FileText, MessageCircle, Send } from 'lucide-react'
-import type { Submission } from '@/lib/types/submission'
-import type { SubmissionMetadata } from '@/lib/types/submission'
+import type { Submission, SubmissionMetadata } from '@/lib/types/submission'
 
 interface Props {
   submissions: Submission[]

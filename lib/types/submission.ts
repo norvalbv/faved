@@ -19,17 +19,17 @@ export interface SubmissionMetadata {
 
 export interface Submission {
   id: string
+  type: string
+  content: string
   metadata: SubmissionMetadata
   createdAt: Date
   updatedAt: Date
   campaignId: string | null
-  type: string
-  content: string
 }
 
 export interface CreateSubmissionData {
-  briefId: string
+  campaignId: string
   type: 'submission'
   content: string
-  metadata: SubmissionMetadata
-} 
+  metadata: Omit<SubmissionMetadata, 'userId'>
+}

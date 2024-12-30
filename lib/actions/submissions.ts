@@ -1,8 +1,8 @@
 'use server'
 
-import { auth } from '../utils/auth'
 import { SubmissionRepository } from '../data-store/repositories/submission'
-import { Submission } from '../types/submission'
+import { Submission, SubmissionMetadata } from '../types/submission'
+import { auth } from '../utils/auth'
 
 export async function getSubmission(id: string) {
   try {
@@ -25,7 +25,7 @@ export async function getSubmission(id: string) {
   }
 }
 
-export async function listSubmissions(briefId?: string) {
+export async function listSubmissions(campaignId?: string) {
   try {
     // 1. Verify user is logged in
     const { userId } = auth()
@@ -34,7 +34,7 @@ export async function listSubmissions(briefId?: string) {
     }
 
     // 2. Get submissions
-    const submissions = await SubmissionRepository.list(briefId)
+    const submissions = await SubmissionRepository.list(campaignId)
     return submissions as Submission[]
   } catch (error) {
     console.error('Error fetching submissions:', error)
@@ -59,13 +59,11 @@ export async function listRecentSubmissions(limit: number = 5): Promise<Submissi
   }
 }
 
-interface CreateSubmissionData {
-  briefId: string
-  type: 'submission'
+export async function createSubmission(data: {
+  campaignId: string
   content: string
-}
-
-export async function createSubmission(data: CreateSubmissionData) {
+  metadata: Omit<SubmissionMetadata, 'userId'>
+}) {
   try {
     // 1. Verify user is logged in
     const { userId } = auth()
@@ -75,8 +73,13 @@ export async function createSubmission(data: CreateSubmissionData) {
 
     // 2. Create submission
     await SubmissionRepository.create({
-      ...data,
-      influencerId: userId,
+      campaignId: data.campaignId,
+      type: 'submission',
+      content: data.content,
+      metadata: {
+        ...data.metadata,
+        userId
+      }
     })
 
     return { success: true }

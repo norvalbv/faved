@@ -1,81 +1,80 @@
-import { eq, desc } from 'drizzle-orm'
-import { drizzleDb } from '..'
+import { Submission, SubmissionMetadata } from '@/lib/types/submission'
 import { submissions } from '../schema'
+import { eq, desc } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
-import type { SubmissionMetadata } from '@/lib/types/submission'
+import { drizzleDb } from '..'
+
+type CreateSubmissionInput = Omit<Submission, 'id' | 'createdAt' | 'updatedAt'>
 
 export class SubmissionRepository {
-  static async create(data: {
-    briefId: string
-    type: 'submission'
-    content: string
-    status?: 'pending' | 'approved' | 'rejected'
-    metadata?: SubmissionMetadata
-  }) {
-    const id = nanoid()
-    const now = new Date()
-    
-    const metadata = {
-      ...(data.metadata || {}),
-      status: data.status || 'pending'
-    }
-    
-    await drizzleDb.insert(submissions).values({
-      id,
-      campaignId: data.briefId,
-      type: data.type,
-      content: data.content,
-      metadata,
-      createdAt: now,
-      updatedAt: now,
-    }).execute()
-
-    return { id, ...data, createdAt: now, updatedAt: now }
-  }
-
-  static async getById(id: string) {
+  static async getById(id: string): Promise<Submission | null> {
     const [result] = await drizzleDb
       .select()
       .from(submissions)
       .where(eq(submissions.id, id))
       .limit(1)
       .execute()
-    return result
+    
+    if (!result) return null
+    return {
+      ...result,
+      metadata: result.metadata as SubmissionMetadata
+    } as Submission
   }
 
-  static async list(briefId?: string) {
+  static async list(campaignId?: string): Promise<Submission[]> {
     const query = drizzleDb.select().from(submissions)
     
-    if (briefId) {
-      return query.where(eq(submissions.campaignId, briefId)).execute()
+    if (campaignId) {
+      const results = await query.where(eq(submissions.campaignId, campaignId)).execute()
+      return results.map(result => ({
+        ...result,
+        metadata: result.metadata as SubmissionMetadata
+      })) as Submission[]
     }
 
-    return query.execute()
+    const results = await query.execute()
+    return results.map(result => ({
+      ...result,
+      metadata: result.metadata as SubmissionMetadata
+    })) as Submission[]
   }
 
-  static async listRecent(limit: number = 5) {
-    return drizzleDb
+  static async listRecent(limit: number = 5): Promise<Submission[]> {
+    const results = await drizzleDb
       .select()
       .from(submissions)
       .orderBy(desc(submissions.createdAt))
       .limit(limit)
       .execute()
+
+    return results.map(result => ({
+      ...result,
+      metadata: result.metadata as SubmissionMetadata
+    })) as Submission[]
   }
 
-  static async updateStatus(id: string, status: 'pending' | 'approved' | 'rejected') {
-    const [submission] = await drizzleDb
-      .select()
-      .from(submissions)
-      .where(eq(submissions.id, id))
-      .limit(1)
-      .execute()
+  static async create(data: CreateSubmissionInput): Promise<void> {
+    const id = nanoid()
+    const now = new Date()
 
-    if (!submission) {
-      throw new Error('Submission not found')
-    }
+    await drizzleDb.insert(submissions).values({
+      id,
+      campaignId: data.campaignId,
+      type: data.type,
+      content: data.content,
+      metadata: data.metadata || {},
+      createdAt: now,
+      updatedAt: now,
+    }).execute()
+  }
+
+  static async updateStatus(id: string, status: 'pending' | 'approved' | 'rejected'): Promise<void> {
+    const submission = await this.getById(id)
+    if (!submission) throw new Error('Submission not found')
 
     const metadata = {
-      ...(submission.metadata as Record<string, unknown> || {}),
+      ...submission.metadata,
       status
     }
 
@@ -83,11 +82,9 @@ export class SubmissionRepository {
       .update(submissions)
       .set({ 
         metadata,
-        updatedAt: new Date()
+        updatedAt: new Date() 
       })
       .where(eq(submissions.id, id))
       .execute()
-    
-    return this.getById(id)
   }
-} 
+}

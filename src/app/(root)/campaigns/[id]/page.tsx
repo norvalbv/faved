@@ -7,6 +7,9 @@ interface Props {
   }
 }
 
+/**
+ * Redirects to submissions page
+ */
 export default async function CampaignPage({ params }: Props): Promise<ReactElement> {
   redirect(`/campaigns/${params.id}/submissions`)
 } 
