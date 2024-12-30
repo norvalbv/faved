@@ -51,9 +51,9 @@ bun install
 
 3. Set up your environment variables as described above
 
-4. Run database migrations:
+4. Run database generation:
 ```bash
-bun run db:migrate
+bun run db:generate
 ```
 
 5. Push database to neon:
