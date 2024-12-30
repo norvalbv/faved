@@ -3,34 +3,38 @@
 import { ReactElement, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { importSubmissions } from '@/lib/actions/import'
-import { Button } from '@/src/components/ui/button'
+import { Button } from '../../../components/ui/button'
 import { cn } from '@/lib/utils'
+import { Loader2 } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
 
 export const FileUpload = (): ReactElement => {
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
+  const [result, setResult] = useState<any>(null)
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       'text/csv': ['.csv'],
     },
     maxFiles: 1,
+    disabled: isUploading,
     onDrop: async (files) => {
       if (files.length === 0) return
 
       setIsUploading(true)
       setError(null)
-      setSuccess(false)
+      setResult(null)
 
       try {
         const file = files[0]
         const fileContent = await file.text()
-        const result = await importSubmissions(fileContent)
-        if (result.success) {
-          setSuccess(true)
+        const importResult = await importSubmissions(fileContent)
+        
+        if (importResult.success) {
+          setResult(importResult)
         } else {
-          setError(result.error || 'Failed to import file')
+          setError(importResult.error || 'Failed to import file')
         }
       } catch (error) {
         console.error('Error uploading file:', error)
@@ -46,8 +50,9 @@ export const FileUpload = (): ReactElement => {
       <div
         {...getRootProps()}
         className={cn(
-          'border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors',
-          isDragActive ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-primary',
+          'border-2 border-dashed rounded-lg p-8 text-center transition-colors',
+          isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/20 hover:border-primary',
+          isUploading && 'opacity-50 cursor-not-allowed'
         )}
       >
         <input {...getInputProps()} />
@@ -56,17 +61,35 @@ export const FileUpload = (): ReactElement => {
             {isDragActive ? 'Drop the file here' : 'Drag and drop your CSV file here'}
           </p>
           <Button type="button" variant="outline" disabled={isUploading}>
-            {isUploading ? 'Uploading...' : 'Or click to select file'}
+            {isUploading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              'Or click to select file'
+            )}
           </Button>
         </div>
       </div>
 
       {error && (
-        <p className="text-sm text-red-500">{error}</p>
+        <Alert variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
-      {success && (
-        <p className="text-sm text-green-500">File imported successfully!</p>
+      {result && (
+        <Alert variant={result.summary.failed > 0 ? 'warning' : 'success'}>
+          <AlertTitle>Import Complete</AlertTitle>
+          <AlertDescription>
+            Successfully imported {result.summary.successful} submissions.
+            {result.summary.failed > 0 && (
+              <> Failed to import {result.summary.failed} submissions.</>
+            )}
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   )

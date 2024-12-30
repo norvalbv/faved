@@ -15,10 +15,17 @@ export class SubmissionRepository {
     const id = nanoid()
     const now = new Date()
     
+    const metadata = {
+      ...(data.metadata || {}),
+      status: data.status || 'pending'
+    }
+    
     await drizzleDb.insert(submissions).values({
       id,
-      ...data,
-      status: data.status || 'pending',
+      campaignId: data.briefId,
+      type: data.type,
+      content: data.content,
+      metadata,
       createdAt: now,
       updatedAt: now,
     }).execute()
@@ -40,7 +47,7 @@ export class SubmissionRepository {
     const query = drizzleDb.select().from(submissions)
     
     if (briefId) {
-      return query.where(eq(submissions.briefId, briefId)).execute()
+      return query.where(eq(submissions.campaignId, briefId)).execute()
     }
 
     return query.execute()
@@ -56,10 +63,26 @@ export class SubmissionRepository {
   }
 
   static async updateStatus(id: string, status: 'pending' | 'approved' | 'rejected') {
+    const [submission] = await drizzleDb
+      .select()
+      .from(submissions)
+      .where(eq(submissions.id, id))
+      .limit(1)
+      .execute()
+
+    if (!submission) {
+      throw new Error('Submission not found')
+    }
+
+    const metadata = {
+      ...(submission.metadata as Record<string, unknown> || {}),
+      status
+    }
+
     await drizzleDb
       .update(submissions)
       .set({ 
-        status,
+        metadata,
         updatedAt: new Date()
       })
       .where(eq(submissions.id, id))
