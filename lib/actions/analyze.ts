@@ -4,6 +4,7 @@ import { analyzeSubmission } from '../services/ai'
 import { SubmissionRepository } from '../data-store/repositories/submission'
 import { BriefRepository } from '../data-store/repositories/brief'
 import { auth } from '../utils/auth'
+import { revalidatePath } from 'next/cache'
 
 export { analyzeSubmission } from '../services/ai'
 
@@ -63,6 +64,9 @@ export async function analyze(submissionId: string) {
         stageId: analysis.brandSafety.pass ? '1' : '3'
       }
     })
+
+    // Revalidate the submissions page
+    revalidatePath('/campaigns/[id]/submissions/[submissionId]', 'page')
 
     return { success: true }
   } catch (error) {

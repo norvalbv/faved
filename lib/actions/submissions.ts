@@ -7,6 +7,7 @@ import { Submission, SubmissionMetadata } from '../types/submission'
 import { auth } from '../utils/auth'
 import { nanoid } from 'nanoid'
 import { analyzeSubmission } from '../services/ai'
+import { revalidatePath } from 'next/cache'
 
 export async function getSubmission(id: string) {
   try {
@@ -164,6 +165,9 @@ export async function createSubmission(data: {
         feedbackHistory
       }
     })
+
+    // Revalidate the submissions page
+    revalidatePath('/campaigns/[id]/submissions/[submissionId]', 'page')
 
     return { success: true, campaignId }
   } catch (error) {

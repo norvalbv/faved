@@ -1,36 +1,102 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Faved - Content Review Platform
+
+Faved is a modern content review platform that helps teams manage and review content submissions efficiently. It features AI-powered analysis, automated feedback, and a streamlined review process, historical data imports, etc.
+
+## Features
+
+- 🤖 AI-powered content analysis
+- 📝 Automated feedback generation
+- 📊 Campaign management
+- 👥 Team collaboration
+- 📁 File submissions support (images, videos, audio, PDFs)
+- 🔄 Multi-stage review process
+- 📈 Progress tracking
+
+## Tech Stack
+
+- **Frontend**: Next.js 14, React, TypeScript, TailwindCSS, Shadcn/UI, Radix
+- **Backend**: Next.js Server Actions, DrizzleORM
+- **Database**: PostgreSQL (Neon)
+- **AI**: OpenAI GPT-4o-mini
+
+## Prerequisites
+
+- PostgreSQL database (this uses recommend [Neon](https://neon.tech))
+- OpenAI API key
+
+## Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+# Database
+DATABASE_URL=="postgres://user:password@host:port/database"
+
+# OpenAI
+OPENAI_API_KEY="your-openai-api-key"
+```
 
 ## Getting Started
 
-First, run the development server:
-
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/norvalbv/faved.git
+cd faved
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies (I like Bun 😼):
+```bash
+bun install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up your environment variables as described above
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Run database migrations:
+```bash
+bun run db:migrate
+```
 
-## Learn More
+5. Push database to neon:
+```bash
+bun run db:push
+```
 
-To learn more about Next.js, take a look at the following resources:
+6. Seed database. This is important as it seeds the database with the necessary briefs, and other data:
+```bash
+bun run db:seed
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+7. Run development server:
+```bash
+bun run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The application will be available at `http://localhost:3000`.
 
-## Deploy on Vercel
+## Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+/lib
+  /actions        # Server actions
+  /data-store     # Database models and repositories
+  /services       # External services (AI, storage)
+  /types          # TypeScript types
+  /utils          # Utility functions
+/src
+  /app           # Next.js app router pages
+  /components    # React components
+    /ui          # Reusable UI components
+```
+## Usage
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Browse Active Projects**: Access your active projects populated with Milanote's seeded data.
+
+2. **Access Project Briefs**: Review comprehensive briefs imported from Milanote.
+
+3. **Upload Content**: Submit files and scripts according to brief specifications.
+
+4. **AI Review Process**: Leverage AI-powered analysis for quick and thorough submission reviews.
+
+5. **Collaborative Feedback**: Provide detailed comments and revision requests on submissions.
+
+6. **Data Import**: Import and integrate historical project data as needed.
