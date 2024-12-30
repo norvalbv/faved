@@ -21,7 +21,7 @@ Faved is a modern content review platform that helps teams manage and review con
 
 ## Prerequisites
 
-- PostgreSQL database (this uses recommend [Neon](https://neon.tech))
+- PostgreSQL database (this project uses [Neon](https://neon.tech))
 - OpenAI API key
 
 ## Environment Variables
