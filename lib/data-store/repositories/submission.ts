@@ -1,5 +1,5 @@
 import { Submission, SubmissionMetadata } from '@/lib/types/submission'
-import { submissions, campaigns } from '../schema'
+import { submissions } from '../schema'
 import { eq, desc } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { drizzleDb } from '..'
@@ -64,28 +64,90 @@ export class SubmissionRepository {
     const id = nanoid()
     const now = new Date()
 
-    // Then create the submission
     await drizzleDb.insert(submissions).values({
       id,
       campaignId: data.campaignId,
       type: data.type,
       content: data.content,
-      metadata: data.metadata || {},
+      metadata: {
+        ...data.metadata,
+        feedbackHistory: []
+      },
       projectId: data.projectId || 'milanote_project_001',
       createdAt: now,
       updatedAt: now,
     }).execute()
   }
 
-  static async updateStatus(id: string, status: 'pending' | 'approved' | 'rejected'): Promise<void> {
+  static async updateStatus(id: string, status: 'pending' | 'approved' | 'rejected', feedback?: string): Promise<void> {
+    const submission = await this.getById(id)
+    if (!submission) throw new Error('Submission not found')
+
+    // Determine stage based on status
+    let stageId = '1' // Default stage
+    if (status === 'approved') {
+      stageId = '5'
+    } else if (status === 'rejected') {
+      stageId = '3'
+    } else if (feedback) {
+      stageId = '2'
+    }
+
+    const feedbackEntry = feedback ? {
+      feedback,
+      createdAt: new Date().toISOString(),
+      status: status === 'approved' ? 'approved' : status === 'rejected' ? 'rejected' : 'changes_requested'
+    } : null
+
+    const metadata = {
+      ...submission.metadata,
+      status,
+      stageId,
+      approved: status === 'approved',
+      feedbackHistory: [
+        ...(submission.metadata.feedbackHistory || []),
+        ...(feedbackEntry ? [feedbackEntry] : [])
+      ]
+    }
+
+    await drizzleDb
+      .update(submissions)
+      .set({ 
+        metadata,
+        updatedAt: new Date() 
+      })
+      .where(eq(submissions.id, id))
+      .execute()
+  }
+
+  static async addFeedback(id: string, feedback: string): Promise<void> {
     const submission = await this.getById(id)
     if (!submission) throw new Error('Submission not found')
 
     const metadata = {
       ...submission.metadata,
-      status
+      stageId: '2', // Set to stage 2 when feedback is added
+      feedbackHistory: [
+        ...(submission.metadata.feedbackHistory || []),
+        {
+          feedback,
+          createdAt: new Date().toISOString(),
+          status: 'comment'
+        }
+      ]
     }
 
+    await drizzleDb
+      .update(submissions)
+      .set({ 
+        metadata,
+        updatedAt: new Date() 
+      })
+      .where(eq(submissions.id, id))
+      .execute()
+  }
+
+  static async updateMetadata(id: string, metadata: SubmissionMetadata): Promise<void> {
     await drizzleDb
       .update(submissions)
       .set({ 

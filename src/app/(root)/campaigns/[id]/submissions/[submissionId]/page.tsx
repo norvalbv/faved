@@ -1,12 +1,11 @@
 import { ReactElement } from 'react'
-import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { CampaignRepository } from '@/lib/data-store/repositories/campaign'
-import { SubmissionRepository } from '@/lib/data-store/repositories/submission'
-import { Button } from '@/src/components/ui/button'
 import { ChevronLeft } from 'lucide-react'
+import { SubmissionRepository } from '@/lib/data-store/repositories/submission'
 import { SubmissionThread } from '@/src/components/submissions/SubmissionThread'
-import type { SubmissionMetadata } from '@/lib/types/submission'
+import { Button } from '@/src/components/ui/button'
+import { notFound } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 
 interface Props {
   params: {
@@ -15,46 +14,61 @@ interface Props {
   }
 }
 
+async function approveSubmission(id: string, feedback: string) {
+  'use server'
+  await SubmissionRepository.updateStatus(id, 'approved', feedback)
+  revalidatePath(`/campaigns/[id]/submissions/[submissionId]`)
+}
+
+async function requestChanges(id: string, feedback: string) {
+  'use server'
+  await SubmissionRepository.updateStatus(id, 'pending', feedback)
+  revalidatePath(`/campaigns/[id]/submissions/[submissionId]`)
+}
+
+async function rejectSubmission(id: string, feedback: string) {
+  'use server'
+  await SubmissionRepository.updateStatus(id, 'rejected', feedback)
+  revalidatePath(`/campaigns/[id]/submissions/[submissionId]`)
+}
+
+async function addFeedback(id: string, feedback: string) {
+  'use server'
+  await SubmissionRepository.addFeedback(id, feedback)
+  revalidatePath(`/campaigns/[id]/submissions/[submissionId]`)
+}
+
 export default async function SubmissionPage({ params }: Props): Promise<ReactElement> {
-  // Get campaign and submission
-  const [campaign, submission] = await Promise.all([
-    CampaignRepository.getById(params.id),
-    SubmissionRepository.getById(params.submissionId)
-  ])
+  const submission = await SubmissionRepository.getById(params.submissionId)
 
-  if (!campaign || !submission) {
-    notFound()
-  }
-
-  // Verify submission belongs to campaign
-  const metadata = submission.metadata as SubmissionMetadata
-  if (metadata?.campaignId !== params.id && submission.campaignId !== params.id) {
+  if (!submission) {
     notFound()
   }
 
   return (
     <div className="container max-w-4xl py-8">
       <div className="mb-8">
-        <Link href={`/campaigns/${params.id}/submissions`}>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mb-4"
-          >
-            <ChevronLeft className="mr-2 h-4 w-4" />
+        <Link href={`/campaigns/${params.id}`}>
+          <Button variant="ghost" size="sm" className="mb-4 -ml-4 h-8 gap-1">
+            <ChevronLeft className="h-4 w-4" />
             Back to submissions
           </Button>
         </Link>
-
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{campaign.title}</h1>
-          <p className="text-muted-foreground">
-            Submission from {metadata?.sender || 'Anonymous'}
-          </p>
-        </div>
+        <h1 className="mb-1 text-2xl font-semibold tracking-tight">
+          {submission.metadata?.type || 'Submission'} Review
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Review and provide feedback on this submission
+        </p>
       </div>
 
-      <SubmissionThread submissions={[submission]} />
+      <SubmissionThread 
+        submissions={[submission]} 
+        onApprove={approveSubmission}
+        onRequestChanges={requestChanges}
+        onReject={rejectSubmission}
+        onAddFeedback={addFeedback}
+      />
     </div>
   )
 } 

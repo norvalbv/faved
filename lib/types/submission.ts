@@ -1,34 +1,27 @@
 export interface SubmissionMetadata {
-  id?: string
-  createdAt?: string
-  campaignId?: string
-  offerId?: string
-  sender: string
+  sender?: string
   message?: string
-  type: string
-  userId?: string
-  stageId: string
-  input: string
-  dateInput?: string
-  attachments?: string
-  submitted?: boolean
+  type?: string
+  stageId?: string
+  campaignId?: string
   approved?: boolean
-  feedback?: string
-  feedbackAttachments?: string
-  importMetadata?: {
-    imported: boolean
-    importedAt: string
-  }
+  status?: 'pending' | 'approved' | 'rejected'
+  feedbackHistory: Array<{
+    feedback: string
+    createdAt: string
+    status: 'comment' | 'changes_requested' | 'approved' | 'rejected'
+  }>
 }
 
 export interface Submission {
   id: string
+  projectId: string
+  campaignId?: string
   type: string
   content: string
   metadata: SubmissionMetadata
   createdAt: Date
   updatedAt: Date
-  campaignId: string | null
 }
 
 export interface CreateSubmissionData {

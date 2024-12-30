@@ -45,14 +45,6 @@ export default async function CampaignSubmissionsPage({ params }: Props): Promis
             <Badge variant={campaign.status === 'active' ? 'success' : 'secondary'}>
               {campaign.status}
             </Badge>
-            {campaign.status === 'active' && (
-              <Link href={`/campaigns/${params.id}/submissions/new`}>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  New Submission
-                </Button>
-              </Link>
-            )}
           </div>
         </div>
       </div>
@@ -61,7 +53,7 @@ export default async function CampaignSubmissionsPage({ params }: Props): Promis
         {campaignSubmissions.map(submission => {
           const metadata = submission.metadata as SubmissionMetadata
           const isApproved = metadata?.approved
-          const hasFeedback = !!metadata?.feedback
+          const hasFeedback = !!metadata?.feedbackHistory?.length
 
           return (
             <Link key={submission.id} href={`/campaigns/${params.id}/submissions/${submission.id}`}>
