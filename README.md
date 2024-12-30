@@ -100,3 +100,11 @@ The application will be available at `http://localhost:3000`.
 5. **Collaborative Feedback**: Provide detailed comments and revision requests on submissions.
 
 6. **Data Import**: Import and integrate historical project data as needed.
+
+
+Screenshots:
+
+![A screenshot of an AI rejection response about a submission.](./public/message-ai-thread-reject.png)
+![A screenshot of an AI response about a submission.](./public/message-ai-thread-in-review.png)
+![Campaigns overview example.](./public/campaigns-overview-example.png)
+![Briefs overview](./public/briefs-overview-example.png)
