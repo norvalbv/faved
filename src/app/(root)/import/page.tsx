@@ -1,5 +1,5 @@
 import { ReactElement } from 'react'
-import { FileUpload } from '@/src/components/import/FileUpload'
+import { FileUpload } from '@/src/components/FileUpload'
 
 const REQUIRED_COLUMNS = [
   { key: 'id', description: 'Unique identifier for the submission' },

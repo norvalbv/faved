@@ -1,10 +1,11 @@
 import { CampaignRepository } from '@/lib/data-store/repositories/campaign'
-import { CampaignFilters } from '@/src/components/campaigns/CampaignFilters'
 import { Badge } from '@/src/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/components/ui/card'
 import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
 import { ReactElement } from 'react'
+import { CampaignFilters } from './CampaignFilters'
+import { ProjectRepository } from '@/lib/data-store/repositories/project'
 
 interface Props {
   searchParams: {
@@ -15,6 +16,7 @@ interface Props {
 
 export default async function CampaignsPage({ searchParams }: Props): Promise<ReactElement> {
   const campaigns = await CampaignRepository.list()
+  const projects = await ProjectRepository.list()
 
   // Filter by status
   const filteredCampaigns = campaigns.filter(campaign => {
@@ -50,7 +52,7 @@ export default async function CampaignsPage({ searchParams }: Props): Promise<Re
       <div className="mb-8">
         <h1 className="mb-1 text-2xl font-semibold tracking-tight">Campaigns</h1>
         <p className="text-sm text-muted-foreground mb-4">{sortedCampaigns.length} total campaigns</p>
-        <CampaignFilters />
+        <CampaignFilters projects={projects} />
       </div>
 
       <div className="grid gap-4">

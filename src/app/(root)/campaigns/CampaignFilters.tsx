@@ -14,6 +14,7 @@ import { ArrowDownAZ, ArrowUpAZ, Clock } from 'lucide-react'
 
 type SortOption = 'title_asc' | 'title_desc' | 'date_desc' | 'date_asc'
 type StatusOption = 'all' | 'active' | 'inactive'
+type ProjectOption = 'all' | string
 
 const SORT_OPTIONS = [
   { value: 'title_asc' as const, label: 'Title A-Z', icon: ArrowDownAZ },
@@ -29,14 +30,22 @@ const STATUS_OPTIONS = [
   { value: 'completed' as const, label: 'Completed' },
 ]
 
-export const CampaignFilters = (): ReactElement => {
+interface Props {
+  projects: Array<{
+    id: string
+    title: string
+  }>
+}
+
+export const CampaignFilters = ({ projects }: Props): ReactElement => {
   const router = useRouter()
   const searchParams = useSearchParams()
   
   const currentSort = (searchParams.get('sort') || 'date_desc') as SortOption
   const currentStatus = (searchParams.get('status') || 'all') as StatusOption
+  const currentProjectId = (searchParams.get('projectId') || 'all') as ProjectOption
 
-  const updateParams = (key: string, value: SortOption | StatusOption) => {
+  const updateParams = (key: string, value: SortOption | StatusOption | ProjectOption) => {
     const params = new URLSearchParams(searchParams.toString())
     params.set(key, value)
     router.push(`?${params.toString()}`)
@@ -46,7 +55,7 @@ export const CampaignFilters = (): ReactElement => {
     router.push('?');
   }
 
-  const hasFilters = currentSort !== 'date_desc' || currentStatus !== 'all'
+  const hasFilters = currentSort !== 'date_desc' || currentStatus !== 'all' || currentProjectId !== 'all'
 
   return (
     <div className="flex items-center gap-2">
@@ -85,6 +94,23 @@ export const CampaignFilters = (): ReactElement => {
         </SelectContent>
       </Select>
 
+      <Select
+        value={currentProjectId}
+        onValueChange={(value: ProjectOption) => updateParams('projectId', value)}
+      >
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="All Projects" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Projects</SelectItem>
+          {projects.map((project) => (
+            <SelectItem key={project.id} value={project.id}>
+              {project.title}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
       {hasFilters && (
         <Button
           variant="ghost"
@@ -96,4 +122,4 @@ export const CampaignFilters = (): ReactElement => {
       )}
     </div>
   )
-} 
+}

@@ -3,10 +3,10 @@
 import { ReactElement, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { importSubmissions } from '@/lib/actions/import'
-import { Button } from '../../../components/ui/button'
+import { Button } from './ui/button'
 import { cn } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
-import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
+import { Alert, AlertDescription, AlertTitle } from './ui/alert'
 
 export const FileUpload = (): ReactElement => {
   const [isUploading, setIsUploading] = useState(false)

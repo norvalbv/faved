@@ -3,7 +3,7 @@ import { projects } from './projects'
 
 export const campaigns = pgTable('campaigns', {
   id: text('id').primaryKey(),
-  projectId: text('project_id').references(() => projects.id).notNull(),
+  projectId: text('project_id').references(() => projects.id).default('milanote_project_001'),
   title: text('title').notNull(),
   description: text('description').notNull(),
   status: text('status', { 
