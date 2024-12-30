@@ -1,9 +1,7 @@
 import { pgTable, text, timestamp, jsonb } from 'drizzle-orm/pg-core'
-import { projects } from './projects'
 
-export const campaigns = pgTable('campaigns', {
+export const projects = pgTable('projects', {
   id: text('id').primaryKey(),
-  projectId: text('project_id').references(() => projects.id).notNull(),
   title: text('title').notNull(),
   description: text('description').notNull(),
   status: text('status', { 
@@ -14,5 +12,5 @@ export const campaigns = pgTable('campaigns', {
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 })
 
-export type Campaign = typeof campaigns.$inferSelect
-export type NewCampaign = typeof campaigns.$inferInsert
+export type Project = typeof projects.$inferSelect
+export type NewProject = typeof projects.$inferInsert

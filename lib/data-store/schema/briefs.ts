@@ -1,7 +1,9 @@
-import { pgTable, text, timestamp, jsonb } from 'drizzle-orm/pg-core'
+import { jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import { projects } from './projects'
 
 export const briefs = pgTable('briefs', {
   id: text('id').primaryKey(),
+  projectId: text('project_id').references(() => projects.id),
   title: text('title').notNull(),
   description: text('description').notNull(),
   type: text('type', { 

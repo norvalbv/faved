@@ -1,6 +1,28 @@
 import { ReactElement } from 'react'
 import { FileUpload } from '@/src/components/import/FileUpload'
 
+const REQUIRED_COLUMNS = [
+  { key: 'id', description: 'Unique identifier for the submission' },
+  { key: 'input', description: 'The content of the submission' }
+] as const
+
+const OPTIONAL_COLUMNS = [
+  { key: 'userId', description: 'The ID of the influencer' },
+  { key: 'campaignId', description: 'The ID of the campaign' },
+  { key: 'projectId', description: 'The ID of the company project. NOTE: This will default to Milanote in this demo project as the csv doesn\'t currently include this information' },
+  { key: 'offerId', description: 'The ID of the offer' },
+  { key: 'sender', description: 'Who sent the submission' },
+  { key: 'message', description: 'Additional message' },
+  { key: 'type', description: 'Type of submission' },
+  { key: 'stageId', description: 'Stage of the submission' },
+  { key: 'dateInput', description: 'Date of the submission' },
+  { key: 'attachments', description: 'Any attached files' },
+  { key: 'submitted', description: 'Whether the submission is submitted (true/false)' },
+  { key: 'approved', description: 'Whether the submission is approved (true/false)' },
+  { key: 'feedback', description: 'Feedback on the submission' },
+  { key: 'feedbackAttachments', description: 'Files attached to feedback' }
+] as const
+
 export default function ImportPage(): ReactElement {
   return (
     <div className="container max-w-4xl py-8">
@@ -20,71 +42,23 @@ export default function ImportPage(): ReactElement {
           <div>
             <h3 className="mb-2 font-medium">Required Columns</h3>
             <ul className="list-inside list-disc space-y-2 text-sm text-muted-foreground">
-              <li>
-                <code className="text-primary">id</code>
-                <span className="ml-2">Unique identifier for the submission</span>
-              </li>
-              <li>
-                <code className="text-primary">input</code>
-                <span className="ml-2">The content of the submission</span>
-              </li>
+              {REQUIRED_COLUMNS.map(({ key, description }) => (
+                <li key={key}>
+                  <code className="text-primary">{key}</code>
+                  <span className="ml-2">{description}</span>
+                </li>
+              ))}
             </ul>
           </div>
           <div>
             <h3 className="mb-2 font-medium">Optional Columns</h3>
             <ul className="list-inside list-disc space-y-2 text-sm text-muted-foreground">
-              <li>
-                <code className="text-primary">userId</code>
-                <span className="ml-2">The ID of the influencer</span>
-              </li>
-              <li>
-                <code className="text-primary">campaignId</code>
-                <span className="ml-2">The ID of the campaign</span>
-              </li>
-              <li>
-                <code className="text-primary">offerId</code>
-                <span className="ml-2">The ID of the offer</span>
-              </li>
-              <li>
-                <code className="text-primary">sender</code>
-                <span className="ml-2">Who sent the submission</span>
-              </li>
-              <li>
-                <code className="text-primary">message</code>
-                <span className="ml-2">Additional message</span>
-              </li>
-              <li>
-                <code className="text-primary">type</code>
-                <span className="ml-2">Type of submission</span>
-              </li>
-              <li>
-                <code className="text-primary">stageId</code>
-                <span className="ml-2">Stage of the submission</span>
-              </li>
-              <li>
-                <code className="text-primary">dateInput</code>
-                <span className="ml-2">Date of the submission</span>
-              </li>
-              <li>
-                <code className="text-primary">attachments</code>
-                <span className="ml-2">Any attached files</span>
-              </li>
-              <li>
-                <code className="text-primary">submitted</code>
-                <span className="ml-2">Whether the submission is submitted (true/false)</span>
-              </li>
-              <li>
-                <code className="text-primary">approved</code>
-                <span className="ml-2">Whether the submission is approved (true/false)</span>
-              </li>
-              <li>
-                <code className="text-primary">feedback</code>
-                <span className="ml-2">Feedback on the submission</span>
-              </li>
-              <li>
-                <code className="text-primary">feedbackAttachments</code>
-                <span className="ml-2">Files attached to feedback</span>
-              </li>
+              {OPTIONAL_COLUMNS.map(({ key, description }) => (
+                <li key={key}>
+                  <code className="text-primary">{key}</code>
+                  <span className="ml-2">{description}</span>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
@@ -93,4 +67,4 @@ export default function ImportPage(): ReactElement {
       <FileUpload />
     </div>
   )
-} 
+}
