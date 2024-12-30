@@ -1,10 +1,10 @@
-import { ReactElement } from 'react'
-import Link from 'next/link'
 import { CampaignRepository } from '@/lib/data-store/repositories/campaign'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/components/ui/card'
-import { Badge } from '@/src/components/ui/badge'
 import { CampaignFilters } from '@/src/components/campaigns/CampaignFilters'
+import { Badge } from '@/src/components/ui/badge'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/components/ui/card'
 import { formatDistanceToNow } from 'date-fns'
+import Link from 'next/link'
+import { ReactElement } from 'react'
 
 interface Props {
   searchParams: {
@@ -19,7 +19,8 @@ export default async function CampaignsPage({ searchParams }: Props): Promise<Re
   // Filter by status
   const filteredCampaigns = campaigns.filter(campaign => {
     if (searchParams.status === 'active') return campaign.status === 'active'
-    if (searchParams.status === 'inactive') return campaign.status === 'inactive'
+    if (searchParams.status === 'draft') return campaign.status === 'draft'
+    if (searchParams.status === 'completed') return campaign.status === 'completed'
     return true
   })
 
@@ -38,10 +39,17 @@ export default async function CampaignsPage({ searchParams }: Props): Promise<Re
     }
   })
 
+  const badgeVariantMap: Record<string, 'success' | 'secondary' | 'default'> = {
+    active: 'success',
+    draft: 'secondary',
+    completed: 'default'
+  }
+
   return (
     <div className="container max-w-4xl py-8">
       <div className="mb-8">
-        <h1 className="mb-4 text-2xl font-semibold tracking-tight">Campaigns</h1>
+        <h1 className="mb-1 text-2xl font-semibold tracking-tight">Campaigns</h1>
+        <p className="text-sm text-muted-foreground mb-4">{sortedCampaigns.length} total campaigns</p>
         <CampaignFilters />
       </div>
 
@@ -54,7 +62,7 @@ export default async function CampaignsPage({ searchParams }: Props): Promise<Re
                   <CardTitle className="text-base">
                     {campaign.title}
                   </CardTitle>
-                  <Badge variant={campaign.status === 'active' ? 'success' : 'secondary'}>
+                  <Badge variant={badgeVariantMap[campaign.status] || 'default'}>
                     {campaign.status}
                   </Badge>
                 </div>

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src
 import { Badge } from '@/src/components/ui/badge'
 import { Button } from '@/src/components/ui/button'
 import { formatDistanceToNow } from 'date-fns'
-import { FileText, MessageCircle } from 'lucide-react'
+import { FileText, MessageCircle, Plus } from 'lucide-react'
 import type { SubmissionMetadata } from '@/lib/types/submission'
 
 interface Props {
@@ -41,9 +41,19 @@ export default async function CampaignSubmissionsPage({ params }: Props): Promis
             <h1 className="mb-2 text-2xl font-semibold tracking-tight">{campaign.title}</h1>
             <p className="text-muted-foreground">{campaign.description}</p>
           </div>
-          <Badge variant={campaign.status === 'active' ? 'success' : 'secondary'}>
-            {campaign.status}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant={campaign.status === 'active' ? 'success' : 'secondary'}>
+              {campaign.status}
+            </Badge>
+            {campaign.status === 'active' && (
+              <Link href={`/campaigns/${params.id}/submissions/new`}>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Submission
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 
@@ -106,8 +116,19 @@ export default async function CampaignSubmissionsPage({ params }: Props): Promis
           <CardContent className="flex flex-col items-center justify-center py-8 text-center">
             <h3 className="mb-2 text-lg font-medium">No submissions yet</h3>
             <p className="mb-4 text-sm text-muted-foreground">
-              There are no submissions for this campaign yet
+              {campaign.status === 'active' 
+                ? 'Get started by creating your first submission'
+                : 'This campaign is not accepting submissions'
+              }
             </p>
+            {campaign.status === 'active' && (
+              <Link href={`/campaigns/${params.id}/submissions/new`}>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Submission
+                </Button>
+              </Link>
+            )}
           </CardContent>
         </Card>
       )}

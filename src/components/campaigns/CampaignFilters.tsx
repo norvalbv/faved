@@ -25,7 +25,8 @@ const SORT_OPTIONS = [
 const STATUS_OPTIONS = [
   { value: 'all' as const, label: 'All Status' },
   { value: 'active' as const, label: 'Active' },
-  { value: 'inactive' as const, label: 'Inactive' },
+  { value: 'draft' as const, label: 'Draft' },
+  { value: 'completed' as const, label: 'Completed' },
 ]
 
 export const CampaignFilters = (): ReactElement => {
@@ -42,7 +43,7 @@ export const CampaignFilters = (): ReactElement => {
   }
 
   const clearFilters = () => {
-    router.push('')
+    router.push('?');
   }
 
   const hasFilters = currentSort !== 'date_desc' || currentStatus !== 'all'
