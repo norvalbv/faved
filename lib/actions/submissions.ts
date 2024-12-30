@@ -63,6 +63,7 @@ export async function createSubmission(data: {
   campaignId: string
   content: string
   metadata: Omit<SubmissionMetadata, 'userId'>
+  projectId?: string
 }) {
   try {
     // 1. Verify user is logged in
@@ -76,6 +77,7 @@ export async function createSubmission(data: {
       campaignId: data.campaignId,
       type: 'submission',
       content: data.content,
+      projectId: data.projectId,
       metadata: {
         ...data.metadata,
         userId

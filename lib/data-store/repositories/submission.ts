@@ -1,10 +1,16 @@
 import { Submission, SubmissionMetadata } from '@/lib/types/submission'
-import { submissions } from '../schema'
+import { submissions, campaigns } from '../schema'
 import { eq, desc } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { drizzleDb } from '..'
 
-type CreateSubmissionInput = Omit<Submission, 'id' | 'createdAt' | 'updatedAt'>
+type CreateSubmissionInput = {
+  campaignId?: string
+  type: string
+  content: string
+  metadata: Record<string, unknown>
+  projectId?: string
+}
 
 export class SubmissionRepository {
   static async getById(id: string): Promise<Submission | null> {
@@ -56,14 +62,28 @@ export class SubmissionRepository {
 
   static async create(data: CreateSubmissionInput): Promise<void> {
     const id = nanoid()
+    const campaignId = nanoid()
     const now = new Date()
 
+    // First create the campaign
+    await drizzleDb.insert(campaigns).values({
+      id: campaignId,
+      projectId: data.projectId || 'milanote_project_001',
+      title: `Submission ${now.toLocaleDateString()}`,
+      description: 'Auto-generated campaign for submission',
+      status: 'active',
+      createdAt: now,
+      updatedAt: now,
+    }).execute()
+
+    // Then create the submission
     await drizzleDb.insert(submissions).values({
       id,
-      campaignId: data.campaignId,
+      campaignId,
       type: data.type,
       content: data.content,
       metadata: data.metadata || {},
+      projectId: data.projectId || 'milanote_project_001',
       createdAt: now,
       updatedAt: now,
     }).execute()
