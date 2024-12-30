@@ -12,7 +12,7 @@ import { Button } from './ui/button'
 interface FileUploadProps {
   mode?: 'import' | 'brief'
   onUploadComplete?: (campaignId: string) => void
-  briefId: string
+  briefId?: string
 }
 
 export const FileUpload = ({ 
@@ -80,7 +80,7 @@ export const FileUpload = ({
         }
 
         const submissionResult = await createSubmission({
-          briefId,
+          briefId: briefId || '',
           content: file.name,
           metadata
         })

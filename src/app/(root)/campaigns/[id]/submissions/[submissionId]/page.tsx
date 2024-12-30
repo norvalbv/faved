@@ -1,11 +1,11 @@
-import { ReactElement } from 'react'
-import Link from 'next/link'
-import { ChevronLeft } from 'lucide-react'
 import { SubmissionRepository } from '@/lib/data-store/repositories/submission'
-import { SubmissionThread } from '@/src/components/submissions/SubmissionThread'
 import { Button } from '@/src/components/ui/button'
-import { notFound } from 'next/navigation'
+import { ChevronLeft } from 'lucide-react'
 import { revalidatePath } from 'next/cache'
+import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { ReactElement } from 'react'
+import { SubmissionThread } from './submissions-thread'
 
 interface Props {
   params: {
