@@ -1,12 +1,29 @@
-export type SubmissionType = 'video_topic' | 'draft_script' | 'draft_video' | 'live_video'
+export interface SubmissionMetadata {
+  id: string
+  createdAt: string
+  campaignId?: string
+  offerId?: string
+  sender?: string
+  message?: string
+  type?: string
+  userId?: string
+  stageId?: string
+  input: string
+  dateInput?: string
+  attachments?: string
+  submitted?: boolean
+  approved?: boolean
+  feedback?: string
+  feedbackAttachments?: string
+}
 
 export interface Submission {
   id: string
   briefId: string
-  type: SubmissionType
+  type: 'submission'
   content: string
   status: 'pending' | 'approved' | 'rejected'
-  feedback?: string[]
+  metadata?: SubmissionMetadata
   createdAt: Date
   updatedAt: Date
 } 

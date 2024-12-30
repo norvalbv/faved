@@ -2,25 +2,9 @@
 
 import { SubmissionRepository } from '@/lib/data-store/repositories/submission'
 import { auth } from '@/lib/utils/auth'
+import type { SubmissionMetadata } from '@/lib/types/submission'
 
-const BRIEF_ID = 'visual-creator-brief-1'
-
-function mapSubmissionType(type: string) {
-  switch (type.toLowerCase()) {
-    case 'video topic':
-      return 'video_topic' as const
-    case 'draft script':
-      return 'draft_script' as const
-    case 'draft video':
-      return 'draft_video' as const
-    case 'live video':
-      return 'live_video' as const
-    default:
-      throw new Error(`Invalid submission type: ${type}`)
-  }
-}
-
-export async function importSubmissions(file: File) {
+export async function importSubmissions(fileContent: string) {
   try {
     // 1. Verify user is logged in
     const { userId } = auth()
@@ -28,29 +12,57 @@ export async function importSubmissions(file: File) {
       throw new Error('Unauthorized')
     }
 
-    // 2. Parse CSV file
-    const text = await file.text()
-    const records = text.split('\n').slice(1).map(line => {
-      const [type, input, status] = line.split(',').map(s => s.trim())
-      return { type, input, status }
+    // 2. Parse CSV content
+    const lines = fileContent.split('\n')
+    const headers = lines[0].split(',')
+    const records = lines.slice(1).map(line => {
+      // Split by comma but respect quotes
+      const values = line.match(/(?:\"([^\"]*(?:\"\"[^\"]*)*)\")|([^\",]+)/g) || []
+      const record: Record<string, string> = {}
+      
+      headers.forEach((header, index) => {
+        let value = values[index] || ''
+        // Remove quotes and clean the value
+        value = value.replace(/^"|"$/g, '').trim()
+        record[header.trim()] = value
+      })
+      
+      return record
+    }).filter(record => {
+      // Validate required fields
+      return record.input && record.id
     })
 
     // 3. Process each record
     const results = []
     for (const record of records) {
       try {
-        // Skip empty lines
-        if (!record.type || !record.input) {
-          continue
+        const metadata: SubmissionMetadata = {
+          id: record.id,
+          createdAt: record.createdAt,
+          campaignId: record.campaignId,
+          offerId: record.offerId,
+          sender: record.sender,
+          message: record.message,
+          type: record.type,
+          userId: record.userId,
+          stageId: record.stageId,
+          input: record.input,
+          dateInput: record.dateInput,
+          attachments: record.attachments,
+          submitted: record.submitted === 'true',
+          approved: record.approved === 'true',
+          feedback: record.feedback,
+          feedbackAttachments: record.feedbackAttachments
         }
 
         // Create submission
         const submission = await SubmissionRepository.create({
-          briefId: BRIEF_ID,
-          influencerId: userId,
-          type: mapSubmissionType(record.type),
+          briefId: record.campaignId || record.id, // Use campaignId if available, fallback to id
+          type: 'submission',
           content: record.input,
-          status: record.status === 'approved' ? 'approved' : 'pending',
+          status: record.approved === 'true' ? 'approved' : 'pending',
+          metadata
         })
 
         results.push({

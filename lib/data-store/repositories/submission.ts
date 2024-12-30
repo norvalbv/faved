@@ -2,14 +2,15 @@ import { eq, desc } from 'drizzle-orm'
 import { drizzleDb } from '..'
 import { submissions } from '../schema'
 import { nanoid } from 'nanoid'
+import type { SubmissionMetadata } from '@/lib/types/submission'
 
 export class SubmissionRepository {
   static async create(data: {
     briefId: string
-    influencerId: string
-    type: 'video_topic' | 'draft_script' | 'draft_video' | 'live_video'
+    type: 'submission'
     content: string
     status?: 'pending' | 'approved' | 'rejected'
+    metadata?: SubmissionMetadata
   }) {
     const id = nanoid()
     const now = new Date()

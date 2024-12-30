@@ -24,7 +24,9 @@ export const FileUpload = (): ReactElement => {
       setSuccess(false)
 
       try {
-        const result = await importSubmissions(files[0])
+        const file = files[0]
+        const fileContent = await file.text()
+        const result = await importSubmissions(fileContent)
         if (result.success) {
           setSuccess(true)
         } else {

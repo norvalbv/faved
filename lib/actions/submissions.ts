@@ -2,6 +2,7 @@
 
 import { auth } from '../utils/auth'
 import { SubmissionRepository } from '../data-store/repositories/submission'
+import { Submission } from '../types/submission'
 
 export async function getSubmission(id: string) {
   try {
@@ -17,7 +18,7 @@ export async function getSubmission(id: string) {
       throw new Error('Submission not found')
     }
 
-    return submission
+    return submission as Submission
   } catch (error) {
     console.error('Error fetching submission:', error)
     throw error
@@ -34,14 +35,14 @@ export async function listSubmissions(briefId?: string) {
 
     // 2. Get submissions
     const submissions = await SubmissionRepository.list(briefId)
-    return submissions
+    return submissions as Submission[]
   } catch (error) {
     console.error('Error fetching submissions:', error)
     throw error
   }
 }
 
-export async function listRecentSubmissions(limit: number = 5) {
+export async function listRecentSubmissions(limit: number = 5): Promise<Submission[]> {
   try {
     // 1. Verify user is logged in
     const { userId } = auth()
@@ -51,7 +52,7 @@ export async function listRecentSubmissions(limit: number = 5) {
 
     // 2. Get recent submissions
     const submissions = await SubmissionRepository.listRecent(limit)
-    return submissions
+    return submissions as Submission[]
   } catch (error) {
     console.error('Error fetching recent submissions:', error)
     throw error
@@ -60,7 +61,7 @@ export async function listRecentSubmissions(limit: number = 5) {
 
 interface CreateSubmissionData {
   briefId: string
-  type: 'video_topic' | 'draft_script' | 'draft_video' | 'live_video'
+  type: 'submission'
   content: string
 }
 

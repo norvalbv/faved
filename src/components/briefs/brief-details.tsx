@@ -1,5 +1,5 @@
 import { ReactElement } from "react"
-import { Brief } from "@/src/types/brief"
+import type { Brief } from "@/lib/types/brief"
 import { Badge } from "@/src/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { ArrowLeft } from "lucide-react"

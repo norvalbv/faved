@@ -2,7 +2,7 @@
 
 import { auth } from '../utils/auth'
 import { BriefRepository } from '../data-store/repositories/brief'
-import type { Brief } from '@/src/types/brief'
+import type { Brief } from '@/lib/types/brief'
 
 export async function getBrief(id: string) {
   try {
