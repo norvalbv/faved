@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import type { SubmissionType } from "@/types/submission"
+import type { SubmissionType } from "@/lib/types/submission"
 
 interface SubmissionFormProps {
   onSubmit: (data: {
