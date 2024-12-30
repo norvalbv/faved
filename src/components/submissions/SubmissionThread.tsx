@@ -160,29 +160,48 @@ export const SubmissionThread = ({
                       <div className="flex items-center gap-2 mb-2">
                         <Bot className="w-5 h-5 text-blue-600" />
                         <span className="font-semibold text-blue-600">AI Analysis</span>
+                        {item.status === 'rejected' && (
+                          <Badge variant="destructive" className="ml-2">
+                            Rejected
+                          </Badge>
+                        )}
                         <time className="text-xs text-muted-foreground ml-auto">
                           {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
                         </time>
                       </div>
-                      <div className="prose prose-sm max-w-none">
-                        <div className="text-gray-700 whitespace-pre-wrap">{item.feedback}</div>
+                      <div className="prose prose-sm max-w-none space-y-4">
+                        {item.feedback.split('\n\n').map((section, idx) => {
+                          if (!section.trim()) return null
+                          const [title, ...content] = section.split('\n')
+                          return (
+                            <div key={idx} className="space-y-2">
+                              <h4 className="font-medium text-gray-900">{title}</h4>
+                              {content.map((line, lineIdx) => (
+                                <p key={lineIdx} className="text-gray-700">{line}</p>
+                              ))}
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   </div>
                 ) : (
                   <div key={index} className="mb-4 rounded-lg bg-muted p-4">
                     <div className="mb-2 flex items-center justify-between">
-                      <Badge variant={
-                        item.status === 'approved' ? 'success' : 
-                        item.status === 'changes_requested' ? 'warning' : 
-                        item.status === 'rejected' ? 'destructive' :
-                        'secondary'
-                      }>
-                        {item.status === 'approved' ? 'Approved' :
-                         item.status === 'changes_requested' ? 'Changes Requested' :
-                         item.status === 'rejected' ? 'Rejected' :
-                         'Comment'}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">{metadata.sender}</span>
+                        <Badge variant={
+                          item.status === 'approved' ? 'success' : 
+                          item.status === 'changes_requested' ? 'warning' : 
+                          item.status === 'rejected' ? 'destructive' :
+                          'secondary'
+                        }>
+                          {item.status === 'approved' ? 'Approved' :
+                           item.status === 'changes_requested' ? 'Changes Requested' :
+                           item.status === 'rejected' ? 'Rejected' :
+                           'Comment'}
+                        </Badge>
+                      </div>
                       <time className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
                       </time>

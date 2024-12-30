@@ -61,28 +61,19 @@ export class SubmissionRepository {
   }
 
   static async create(data: CreateSubmissionInput): Promise<void> {
-    console.log('Creating submission with data:', JSON.stringify(data, null, 2))
-    
     const id = nanoid()
     const now = new Date()
 
-    try {
-      await drizzleDb.insert(submissions).values({
-        id,
-        campaignId: data.campaignId,
-        type: data.type,
-        content: data.content,
-        metadata: data.metadata,
-        projectId: data.projectId || 'milanote_project_001',
-        createdAt: now,
-        updatedAt: now,
-      }).execute()
-      
-      console.log('Submission inserted successfully')
-    } catch (error) {
-      console.error('Error inserting submission:', error)
-      throw error
-    }
+    await drizzleDb.insert(submissions).values({
+      id,
+      campaignId: data.campaignId,
+      type: data.type,
+      content: data.content,
+      metadata: data.metadata,
+      projectId: data.projectId || 'milanote_project_001',
+      createdAt: now,
+      updatedAt: now,
+    }).execute()
   }
 
   static async updateStatus(id: string, status: 'pending' | 'approved' | 'rejected', feedback?: string): Promise<void> {

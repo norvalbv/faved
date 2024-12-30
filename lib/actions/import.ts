@@ -141,21 +141,21 @@ export async function importSubmissions(csvContent: string) {
 
     console.log('Parsed CSV records:', records.length)
 
-    // 4. Validate required fields
-    const invalidRows = records.filter(row => !row.input || !row.campaignId)
-    if (invalidRows.length > 0) {
-      throw new Error(`Missing required fields in rows: ${invalidRows.map(row => row.id || 'unknown').join(', ')}`)
-    }
+    // 4. Group records by campaignId
+    const campaignGroups = new Map<string, CSVRow[]>()
+    records.forEach(row => {
+      if (!campaignGroups.has(row.campaignId)) {
+        campaignGroups.set(row.campaignId, [])
+      }
+      campaignGroups.get(row.campaignId)?.push(row)
+    })
 
-    // 5. First, create all campaigns sequentially
-    const uniqueCampaigns = [...new Set(records.map(row => row.campaignId))]
-    console.log('Unique campaigns to process:', uniqueCampaigns.length)
-    
-    const campaignIdMap = new Map<string, string>() // Map of import ID to actual ID
+    // 5. Create campaigns
+    const campaignIdMap = new Map<string, string>()
     const failedCampaigns = new Set<string>()
 
-    for (const importId of uniqueCampaigns) {
-      const firstRow = records.find(row => row.campaignId === importId)
+    for (const [importId, rows] of campaignGroups) {
+      const firstRow = rows[0]
       if (!firstRow) {
         console.error('No data found for import ID:', importId)
         failedCampaigns.add(importId)
@@ -171,88 +171,121 @@ export async function importSubmissions(csvContent: string) {
         failedCampaigns.add(importId)
       }
 
-      // Shorter wait between campaigns
-      await wait(100) // Reduced from 1000ms to 100ms
+      await wait(100)
     }
 
     console.log(`Campaign creation summary: ${campaignIdMap.size} successful, ${failedCampaigns.size} failed`)
     
-    // Shorter wait after all campaigns are created
-    await wait(500) // Reduced from 2000ms to 500ms
-
-    // Process submissions in batches of 10 for better performance
-    const batchSize = 10
+    // 6. Process submissions with their feedback
     const results: { id: string; success: boolean; error?: string }[] = []
     
-    for (let i = 0; i < records.length; i += batchSize) {
-      const batch = records.slice(i, i + batchSize)
-      const batchResults = await Promise.all(batch.map(async (row) => {
-        try {
-          // Skip submissions for failed campaigns
-          if (failedCampaigns.has(row.campaignId)) {
-            console.log(`Skipping submission for failed campaign: ${row.campaignId}`)
-            return { 
-              id: row.id, 
-              success: false, 
-              error: 'Campaign creation failed' 
-            }
-          }
+    for (const [importId, rows] of campaignGroups) {
+      if (failedCampaigns.has(importId)) {
+        results.push(...rows.map(row => ({
+          id: row.id,
+          success: false,
+          error: 'Campaign creation failed'
+        })))
+        continue
+      }
 
-          // Get the actual campaign ID (might be the same as original)
-          const actualCampaignId = campaignIdMap.get(row.campaignId)
-          if (!actualCampaignId) {
-            console.error(`No campaign ID mapping found for ${row.campaignId}`)
-            return { 
-              id: row.id, 
-              success: false, 
-              error: 'Campaign ID mapping not found' 
-            }
-          }
+      const actualCampaignId = campaignIdMap.get(importId)
+      if (!actualCampaignId) {
+        results.push(...rows.map(row => ({
+          id: row.id,
+          success: false,
+          error: 'Campaign ID mapping not found'
+        })))
+        continue
+      }
 
-          // Convert boolean strings to actual booleans
-          const submitted = row.submitted?.toLowerCase() === 'true'
-          const approved = row.approved?.toLowerCase() === 'true'
+      try {
+        // Find the initial submission (first row)
+        const mainRow = rows[0]
+        const otherRows = rows.slice(1)
 
-          // Parse feedback if exists
-          const feedbackHistory = row.feedback ? [{
-            feedback: row.feedback,
-            createdAt: new Date().toISOString(),
-            status: approved ? 'approved' : 'comment'
-          }] : []
+        console.log('Processing main row:', {
+          message: mainRow.message,
+          feedback: mainRow.feedback,
+          dateInput: mainRow.dateInput,
+          createdAt: mainRow.createdAt
+        })
 
-          // Create submission with actual campaign ID
-          await SubmissionRepository.create({
-            type: row.type || 'content',
-            content: row.input,
-            campaignId: actualCampaignId,
-            projectId: row.projectId || 'milanote_project_001',
-            metadata: {
-              userId: row.userId,
-              sender: row.sender,
-              message: row.message,
-              stageId: row.stageId || '1',
-              status: approved ? 'approved' : 'pending',
-              submitted,
-              approved,
-              feedbackHistory,
-              attachments: row.attachments ? row.attachments.split(',').map(url => url.trim()) : [],
-              feedbackAttachments: row.feedbackAttachments ? row.feedbackAttachments.split(',').map(url => url.trim()) : [],
-              isHistoricalImport: true,
-              skipAiResponse: true // Skip AI response for historical imports
-            }
+        // Convert boolean strings to actual booleans
+        const submitted = mainRow.submitted?.toLowerCase() === 'true'
+        const approved = mainRow.approved?.toLowerCase() === 'true'
+
+        // Build feedback history from all rows
+        const feedbackHistory = []
+        
+        // Process main row
+        if (mainRow.message) {
+          console.log('Adding feedback from main row:', mainRow.message)
+          const isApproval = mainRow.message.toLowerCase().includes('approved')
+          feedbackHistory.push({
+            feedback: mainRow.message,
+            createdAt: mainRow.dateInput || mainRow.createdAt || new Date().toISOString(),
+            status: isApproval ? 'approved' : 'comment'
           })
-          console.log('Created submission for campaign:', actualCampaignId)
-          return { id: row.id, success: true }
-        } catch (error) {
-          console.error(`Error processing row ${row.id}:`, error)
-          return { id: row.id, success: false, error: (error as Error).message }
         }
-      }))
-      results.push(...batchResults)
 
-      // Small delay between batches
-      if (i + batchSize < records.length) {
-        await wait(50)
+        // Process subsequent rows in chronological order
+        const sortedRows = otherRows.sort((a, b) => {
+          const dateA = new Date(a.dateInput || a.createdAt)
+          const dateB = new Date(b.dateInput || b.createdAt)
+          return dateA.getTime() - dateB.getTime()
+        })
+
+        console.log('Other rows to process:', otherRows.length)
+        
+        for (const row of sortedRows) {
+          if (row.message) {
+            console.log('Adding feedback from subsequent row:', row.message)
+            const isApproval = row.message.toLowerCase().includes('approved')
+            feedbackHistory.push({
+              feedback: row.message,
+              createdAt: row.dateInput || row.createdAt || new Date().toISOString(),
+              status: isApproval ? 'approved' : 'comment'
+            })
+          }
+        }
+
+        console.log('Final feedback history:', feedbackHistory)
+
+        // Create the main submission with all feedback
+        const submissionData = {
+          type: mainRow.type || 'content',
+          content: mainRow.input || '',
+          campaignId: actualCampaignId,
+          projectId: mainRow.projectId || 'milanote_project_001',
+          metadata: {
+            userId: mainRow.userId || '',
+            sender: mainRow.sender || 'Anonymous',
+            stageId: mainRow.stageId || '1',
+            status: approved ? 'approved' : 'pending',
+            submitted,
+            approved,
+            feedbackHistory,
+            attachments: mainRow.attachments ? mainRow.attachments.split(',').map(url => url.trim()) : [],
+            feedbackAttachments: mainRow.feedbackAttachments ? mainRow.feedbackAttachments.split(',').map(url => url.trim()) : [],
+            isHistoricalImport: true,
+            skipAiResponse: true
+          }
+        }
+
+        console.log('Creating submission with data:', JSON.stringify(submissionData, null, 2))
+        
+        await SubmissionRepository.create(submissionData)
+
+        console.log(`Created submission with ${feedbackHistory.length} feedback entries for campaign:`, actualCampaignId)
+        results.push(...rows.map(row => ({ id: row.id, success: true })))
+      } catch (error) {
+        console.error(`Error processing campaign ${importId}:`, error)
+        results.push(...rows.map(row => ({
+          id: row.id,
+          success: false,
+          error: (error as Error).message
+        })))
       }
     }
 

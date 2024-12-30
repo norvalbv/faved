@@ -5,13 +5,14 @@ import { useDropzone } from 'react-dropzone'
 import { Cloud, File, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { importSubmissions } from '@/lib/actions/import'
+import { createSubmission } from '@/lib/actions/submissions'
 import { Progress } from './ui/progress'
 import { Button } from './ui/button'
 
 interface FileUploadProps {
   mode?: 'import' | 'brief'
-  onUploadComplete?: (url: string) => void
-  briefId?: string
+  onUploadComplete?: (campaignId: string) => void
+  briefId: string
 }
 
 export const FileUpload = ({ 
@@ -67,17 +68,31 @@ export const FileUpload = ({
           toast.error(result.message)
         }
       } else {
-        // Handle brief file upload
-        // TODO: Implement actual file upload logic
-        const fakeUrl = `https://storage.example.com/${file.name}`
-        setUploadProgress(50)
-        
-        if (onUploadComplete) {
-          onUploadComplete(fakeUrl)
+        // Create submission with file URL
+        const metadata = {
+          type: file.type.startsWith('video/') ? 'draft_video' : 'draft_script',
+          message: file.name,
+          stageId: '1',
+          input: file.name,
+          sender: 'Anonymous',
+          submitted: true,
+          feedbackHistory: []
         }
-        
-        toast.success('File uploaded successfully')
-        setUploadProgress(100)
+
+        const submissionResult = await createSubmission({
+          briefId,
+          content: file.name,
+          metadata
+        })
+
+        if (submissionResult.success && submissionResult.campaignId) {
+          if (onUploadComplete) {
+            onUploadComplete(submissionResult.campaignId)
+          }
+          toast.success('File uploaded successfully')
+        } else {
+          toast.error('Failed to create submission')
+        }
       }
     } catch (error) {
       console.error('Error uploading file:', error)
@@ -86,7 +101,7 @@ export const FileUpload = ({
       setIsUploading(false)
       setUploadProgress(0)
     }
-  }, [mode, onUploadComplete])
+  }, [mode, onUploadComplete, briefId])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

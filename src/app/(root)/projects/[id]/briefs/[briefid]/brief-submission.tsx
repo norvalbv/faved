@@ -52,6 +52,7 @@ export const BriefSubmissionForm = ({ briefId }: Props): ReactElement => {
         input: content,
         sender: 'Anonymous',
         submitted: true,
+        feedbackHistory: []
       }
 
       const submissionResult = await createSubmission({
@@ -133,7 +134,7 @@ export const BriefSubmissionForm = ({ briefId }: Props): ReactElement => {
             <FileUpload 
               briefId={briefId} 
               onUploadComplete={handleUploadComplete}
-              submissionType={type}
+              mode={type === 'draft_video' ? 'brief' : 'import'} 
             />
           </div>
         )}

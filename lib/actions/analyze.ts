@@ -1,107 +1,70 @@
 'use server'
 
-import type { Brief, BriefMetadata } from '../types/brief'
-import type { Submission } from '../types/submission'
-import { analyzeSubmission as aiAnalyze } from '../services/ai'
+import { analyzeSubmission } from '../services/ai'
+import { SubmissionRepository } from '../data-store/repositories/submission'
+import { BriefRepository } from '../data-store/repositories/brief'
+import { auth } from '../utils/auth'
 
-interface AnalysisResult {
-  matches: {
-    category: string
-    items: string[]
-  }[]
-  mismatches: {
-    category: string
-    items: string[]
-  }[]
-  brandSafety: {
-    issues: string[]
-    pass: boolean
-  }
-  sellingPoints: {
-    covered: string[]
-    missing: string[]
-  }
-}
-
-interface BriefWithMetadata extends Omit<Brief, 'metadata'> {
-  metadata: BriefMetadata
-}
-
-export async function analyzeSubmission(
-  submission: Submission,
-  brief: Brief
-): Promise<AnalysisResult> {
-  // Cast brief to include required metadata
-  const briefWithMetadata: BriefWithMetadata = {
-    ...brief,
-    metadata: brief.metadata || {
-      overview: {
-        what: brief.description,
-        gettingStarted: ''
-      },
-      guidelines: [{
-        category: 'Requirements',
-        items: [brief.description]
-      }]
+export async function analyze(submissionId: string) {
+  try {
+    // 1. Verify user is logged in
+    const { userId } = auth()
+    if (!userId) {
+      throw new Error('Unauthorized')
     }
-  }
 
-  // Get AI analysis
-  const aiResponse = await aiAnalyze(submission, briefWithMetadata)
-  
-  // Parse AI response
-  const result: AnalysisResult = {
-    matches: [],
-    mismatches: [],
-    brandSafety: {
-      issues: [],
-      pass: !aiResponse.includes('{{reject}}')
-    },
-    sellingPoints: {
-      covered: [],
-      missing: []
+    // 2. Get submission and brief
+    const submission = await SubmissionRepository.getById(submissionId)
+    if (!submission) {
+      throw new Error('Submission not found')
     }
-  }
 
-  // Extract rejection reason if present
-  if (aiResponse.includes('{{reject}}')) {
-    const reasonMatch = aiResponse.match(/REASON:\s*(.+?)(?:\n|$)/)
-    if (reasonMatch) {
-      result.brandSafety.issues.push(reasonMatch[1].trim())
+    const brief = await BriefRepository.getById(submission.projectId)
+    if (!brief) {
+      throw new Error('Brief not found')
     }
-  }
 
-  // Extract sections from AI response
-  const sections = aiResponse.split('\n\n')
-  for (const section of sections) {
-    if (section.startsWith('ANALYSIS:')) {
-      const items = section.replace('ANALYSIS:', '').trim().split('\n').filter(Boolean)
-      if (items.length > 0) {
-        result.matches.push({
-          category: 'Analysis',
-          items
-        })
-      }
-    } else if (section.startsWith('AREAS FOR IMPROVEMENT:')) {
-      const items = section.replace('AREAS FOR IMPROVEMENT:', '').trim().split('\n').filter(Boolean)
-      if (items.length > 0) {
-        result.mismatches.push({
-          category: 'Improvements',
-          items
-        })
-      }
-    } else if (section.startsWith('BRAND SAFETY ISSUES:')) {
-      const items = section.replace('BRAND SAFETY ISSUES:', '').trim().split('\n').filter(Boolean)
-      if (items.length > 0) {
-        result.brandSafety.issues.push(...items)
-      }
-    } else if (section.startsWith('MISSING KEY POINTS:')) {
-      const items = section.replace('MISSING KEY POINTS:', '').trim().split('\n').filter(Boolean)
-      if (items.length > 0) {
-        result.sellingPoints.missing.push(...items)
+    // Cast brief metadata to expected type
+    const briefWithMetadata = {
+      ...brief,
+      metadata: {
+        overview: {
+          what: brief.description,
+          gettingStarted: (brief.metadata as { gettingStarted?: string } | undefined)?.gettingStarted || ''
+        },
+        guidelines: (brief.metadata as { guidelines?: { category: string; items: string[] }[] } | undefined)?.guidelines || [{
+          category: 'Requirements',
+          items: [brief.description]
+        }]
       }
     }
-  }
 
-  return result
+    // 3. Analyze submission
+    const analysis = await analyzeSubmission(submission, briefWithMetadata)
+
+    // 4. Update submission with feedback
+    const feedbackHistory = [...(submission.metadata.feedbackHistory || [])]
+    feedbackHistory.push({
+      feedback: analysis.matches.map(m => `${m.category}:\n${m.items.join('\n')}`).join('\n\n') +
+        (analysis.mismatches.length > 0 ? `\n\nAreas for Improvement:\n${analysis.mismatches.map(m => m.items.join('\n')).join('\n')}` : ''),
+      createdAt: new Date().toISOString(),
+      status: analysis.brandSafety.pass ? 'comment' : 'rejected',
+      isAiFeedback: true
+    })
+
+    await SubmissionRepository.create({
+      ...submission,
+      metadata: {
+        ...submission.metadata,
+        feedbackHistory,
+        status: analysis.brandSafety.pass ? 'pending' : 'rejected',
+        stageId: analysis.brandSafety.pass ? '1' : '3'
+      }
+    })
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error analyzing submission:', error)
+    return { success: false, error: 'Failed to analyze submission' }
+  }
 } 

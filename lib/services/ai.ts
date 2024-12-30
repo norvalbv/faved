@@ -1,30 +1,72 @@
 import OpenAI from 'openai'
-import type { Brief, BriefMetadata } from '../types/brief'
+import type { Brief } from '../types/brief'
+import { Submission } from '../types/submission'
 
-interface BriefWithMetadata extends Omit<Brief, 'metadata'> {
-  metadata: BriefMetadata
+export interface AnalysisResult {
+  matches: { category: string; items: string[] }[]
+  mismatches: { category: string; items: string[] }[]
+  brandSafety: { pass: boolean; issues: string[] }
+  sellingPoints: { present: string[]; missing: string[] }
+}
+
+export interface BriefWithMetadata extends Omit<Brief, 'metadata'> {
+  metadata: {
+    overview: {
+      what: string
+      gettingStarted: string
+    }
+    guidelines: { category: string; items: string[] }[]
+  }
 }
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
 
-export async function analyzeSubmission(submission: { content: string }, brief: BriefWithMetadata): Promise<string> {
+export async function analyzeSubmission(
+  submission: Submission,
+  brief: BriefWithMetadata
+): Promise<AnalysisResult> {
   try {
     console.log('Analyzing submission with AI...')
 
-    // Check if submission is a file by looking for file extensions
     const fileExtensionRegex = /\.(jpg|jpeg|png|gif|pdf|doc|docx|xls|xlsx|txt|mp4|mp3)$/i
     if (fileExtensionRegex.test(submission.content)) {
-      return "I currently can't review files but will be able to later"
+      const fileType = submission.content.split('.').pop()?.toLowerCase()
+      let mediaType = 'file'
+      
+      if (['jpg', 'jpeg', 'png', 'gif'].includes(fileType || '')) {
+        mediaType = 'image'
+      } else if (['mp4'].includes(fileType || '')) {
+        mediaType = 'video'
+      } else if (['mp3'].includes(fileType || '')) {
+        mediaType = 'audio'
+      } else if (['pdf'].includes(fileType || '')) {
+        mediaType = 'document'
+      }
+
+      return {
+        matches: [{
+          category: 'File Analysis',
+          items: [`Received ${mediaType} submission: ${submission.content}`]
+        }],
+        mismatches: [],
+        brandSafety: {
+          pass: true,
+          issues: []
+        },
+        sellingPoints: {
+          present: [],
+          missing: []
+        }
+      }
     }
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // Keep this specific model
-      messages: [
-        {
-          role: "system",
-          content: `You are a strict content reviewer that analyzes submissions against brief requirements.
+    // Format the messages for the AI
+    const messages = [
+      {
+        role: 'system' as const,
+        content: `You are a strict content reviewer that analyzes submissions against brief requirements.
 
 CRITICAL RULES:
 1. If the submission fails any of these criteria:
@@ -50,10 +92,10 @@ STRENGTHS:
 AREAS FOR IMPROVEMENT:
 - Specific, actionable improvements needed
 - Reference exact brief requirements`
-        },
-        {
-          role: "user",
-          content: `Analyze this submission against the brief requirements:
+      },
+      {
+        role: 'user' as const,
+        content: `Analyze this submission against the brief requirements:
 
 BRIEF DETAILS
 Title: ${brief.title}
@@ -65,28 +107,83 @@ SUBMISSION CONTENT:
 ${submission.content}
 
 Remember: For rejections, respond with {{reject}} followed by REASON: and your explanation.`
-        }
-      ],
-      temperature: 0.3,
+      }
+    ]
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages,
+      temperature: 0.5,
       max_tokens: 1000
     })
 
-    const feedback = response.choices[0]?.message?.content || "Unable to analyze submission"
-    console.log('AI feedback generated:', feedback)
+    const analysis = response.choices[0].message.content || ''
     
-    // Check if it's a rejection
-    if (feedback.includes('{{reject}}')) {
-      // Extract the reason after {{reject}} and REASON:
-      const reason = feedback.split('REASON:')[1]?.trim() || 'Submission does not meet brief requirements'
-      
-      // Return formatted rejection with reason
-      return `{{reject}}
-REASON: ${reason}`
+    // Parse the AI response into structured format
+    const matches: { category: string; items: string[] }[] = []
+    const mismatches: { category: string; items: string[] }[] = []
+    const brandSafetyIssues: string[] = []
+    
+    // Check for rejection
+    const isRejected = analysis.includes('{{reject}}')
+    
+    if (isRejected) {
+      const reason = analysis.split('REASON:')[1]?.trim() || 'Submission does not meet brief requirements'
+      mismatches.push({
+        category: 'Rejection',
+        items: [reason]
+      })
+    } else {
+      // Parse sections
+      const sections = analysis.split('\n\n')
+      sections.forEach(section => {
+        if (section.startsWith('ANALYSIS:')) {
+          matches.push({
+            category: 'Analysis',
+            items: section.replace('ANALYSIS:', '').trim().split('\n').map(item => item.trim()).filter(Boolean)
+          })
+        } else if (section.startsWith('STRENGTHS:')) {
+          matches.push({
+            category: 'Strengths',
+            items: section.replace('STRENGTHS:', '').trim().split('\n').map(item => item.trim()).filter(Boolean)
+          })
+        } else if (section.startsWith('AREAS FOR IMPROVEMENT:')) {
+          mismatches.push({
+            category: 'Areas for Improvement',
+            items: section.replace('AREAS FOR IMPROVEMENT:', '').trim().split('\n').map(item => item.trim()).filter(Boolean)
+          })
+        }
+      })
     }
     
-    return feedback
+    return {
+      matches,
+      mismatches,
+      brandSafety: {
+        pass: !isRejected,
+        issues: brandSafetyIssues
+      },
+      sellingPoints: {
+        present: matches.flatMap(m => m.items),
+        missing: mismatches.flatMap(m => m.items)
+      }
+    }
   } catch (error) {
-    console.error('Error analyzing submission:', error)
-    return "Error analyzing submission. Please try again later."
+    console.error('AI analysis failed:', error)
+    return {
+      matches: [{
+        category: 'Error',
+        items: ['Failed to analyze submission']
+      }],
+      mismatches: [],
+      brandSafety: {
+        pass: true,
+        issues: []
+      },
+      sellingPoints: {
+        present: [],
+        missing: []
+      }
+    }
   }
 } 

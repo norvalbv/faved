@@ -47,11 +47,12 @@ export const CampaignSubmissionForm = ({ campaignId }: Props): ReactElement => {
         stageId: type === 'draft_script' ? '1' : type === 'draft_video' ? '2' : '3',
         input: content,
         sender: 'Anonymous',
-        submitted: true
+        submitted: true,
+        feedbackHistory: []
       }
 
       const result = await createSubmission({
-        campaignId,
+        briefId: campaignId,
         content,
         metadata
       })
@@ -121,7 +122,8 @@ export const CampaignSubmissionForm = ({ campaignId }: Props): ReactElement => {
               Upload {type === 'draft_video' ? 'Draft' : 'Final'} Video
             </label>
             <FileUpload 
-              mode="submission" 
+              mode="brief" 
+              briefId={campaignId}
               onUploadComplete={(url) => setContent(url)} 
             />
           </div>
