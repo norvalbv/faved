@@ -1,6 +1,6 @@
-import { eq } from 'drizzle-orm'
+import { eq, count } from 'drizzle-orm'
 import { drizzleDb } from '..'
-import { campaigns } from '../schema'
+import { campaigns, submissions } from '../schema'
 import { nanoid } from 'nanoid'
 import type { Campaign } from '@/lib/types/campaign'
 
@@ -38,6 +38,32 @@ export class CampaignRepository {
       ...result,
       metadata: result.metadata as Record<string, unknown> | null
     }))
+  }
+
+  static async listWithSubmissionCount(): Promise<(Campaign & { submissionCount: number })[]> {
+    const results = await drizzleDb
+      .select({
+        id: campaigns.id,
+        title: campaigns.title,
+        description: campaigns.description,
+        status: campaigns.status,
+        briefId: campaigns.briefId,
+        projectId: campaigns.projectId,
+        metadata: campaigns.metadata,
+        createdAt: campaigns.createdAt,
+        updatedAt: campaigns.updatedAt,
+        submissionCount: count(submissions.id)
+      })
+      .from(campaigns)
+      .leftJoin(submissions, eq(submissions.campaignId, campaigns.id))
+      .groupBy(campaigns.id)
+      .execute()
+    
+    return results.map(result => ({
+      ...result,
+      metadata: result.metadata as Record<string, unknown> | null,
+      submissionCount: Number(result.submissionCount)
+    })) as (Campaign & { submissionCount: number })[]
   }
 
   static async findByBriefId(briefId: string): Promise<Campaign | null> {

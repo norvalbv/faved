@@ -137,25 +137,6 @@ export const CampaignFilters = ({ projects, briefs }: Props): ReactElement => {
       </Select>
 
       <Select
-        value={currentBriefType}
-        onValueChange={(value: BriefTypeOption) => {
-          updateParams('briefType', value)
-          updateParams('briefId', 'all')
-        }}
-      >
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="All Brief Types" />
-        </SelectTrigger>
-        <SelectContent>
-          {BRIEF_TYPE_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <Select
         value={currentBriefId}
         onValueChange={(value) => updateParams('briefId', value)}
       >

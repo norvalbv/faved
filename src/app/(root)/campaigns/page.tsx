@@ -8,7 +8,10 @@ import { CampaignFilters } from './CampaignFilters'
 import { ProjectRepository } from '@/lib/data-store/repositories/project'
 import { BriefRepository } from '@/lib/data-store/repositories/brief'
 import { Separator } from '@/src/components/ui/separator'
-import { FileText } from 'lucide-react'
+import { FileText, MessageSquare } from 'lucide-react'
+import type { Campaign } from '@/lib/types/campaign'
+import type { Brief } from '@/lib/types/brief'
+import type { Project } from '@/lib/types/project'
 
 interface Props {
   searchParams: {
@@ -20,31 +23,54 @@ interface Props {
   }
 }
 
+type CampaignWithDetails = Campaign & {
+  submissionCount: number
+  briefTitle: string | null
+  companyTitle: string
+}
+
 export default async function CampaignsPage({ searchParams }: Props): Promise<ReactElement> {
-  const [campaigns, projects, briefs] = await Promise.all([
-    CampaignRepository.list(),
-    ProjectRepository.list(),
-    BriefRepository.list()
-  ])
+  // Get all data using repositories
+  const [campaigns, briefs, projects] = await Promise.all([
+    CampaignRepository.listWithSubmissionCount(),
+    BriefRepository.list(),
+    ProjectRepository.list()
+  ]) as [
+    (Campaign & { submissionCount: number })[],
+    Brief[],
+    Project[]
+  ]
+
+  // Transform results
+  let campaignsWithDetails = campaigns.map(campaign => {
+    const brief = briefs.find(b => b.id === campaign.briefId)
+    const project = projects.find(p => p.id === campaign.projectId)
+
+    return {
+      ...campaign,
+      briefTitle: brief?.title || null,
+      companyDescription: project?.description || null,
+      companyTitle: project?.title || 'Unknown Company'
+    }
+  })
 
   // Filter by status
-  let filteredCampaigns = campaigns.filter(campaign => {
-    if (searchParams.status === 'active') return campaign.status === 'active'
-    if (searchParams.status === 'draft') return campaign.status === 'draft'
-    if (searchParams.status === 'completed') return campaign.status === 'completed'
-    return true
-  })
+  if (searchParams.status) {
+    campaignsWithDetails = campaignsWithDetails.filter(campaign => 
+      campaign.status === searchParams.status
+    )
+  }
 
   // Filter by project
   if (searchParams.projectId && searchParams.projectId !== 'all') {
-    filteredCampaigns = filteredCampaigns.filter(campaign => 
+    campaignsWithDetails = campaignsWithDetails.filter(campaign => 
       campaign.projectId === searchParams.projectId
     )
   }
 
   // Filter by brief type
   if (searchParams.briefType && searchParams.briefType !== 'all') {
-    filteredCampaigns = filteredCampaigns.filter(campaign => {
+    campaignsWithDetails = campaignsWithDetails.filter(campaign => {
       const brief = briefs.find(b => b.id === campaign.briefId)
       return brief?.type === searchParams.briefType
     })
@@ -52,25 +78,33 @@ export default async function CampaignsPage({ searchParams }: Props): Promise<Re
 
   // Filter by specific brief
   if (searchParams.briefId && searchParams.briefId !== 'all') {
-    filteredCampaigns = filteredCampaigns.filter(campaign => 
+    campaignsWithDetails = campaignsWithDetails.filter(campaign => 
       campaign.briefId === searchParams.briefId
     )
   }
 
   // Sort campaigns
-  const sortedCampaigns = [...filteredCampaigns].sort((a, b) => {
-    switch (searchParams.sort) {
-      case 'title_asc':
-        return a.title.localeCompare(b.title)
-      case 'title_desc':
-        return b.title.localeCompare(a.title)
-      case 'date_asc':
-        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      case 'date_desc':
-      default:
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    }
-  })
+  if (searchParams.sort) {
+    campaignsWithDetails = [...campaignsWithDetails].sort((a, b) => {
+      switch (searchParams.sort) {
+        case 'title_asc':
+          return a.title.localeCompare(b.title)
+        case 'title_desc':
+          return b.title.localeCompare(a.title)
+        case 'date_asc':
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        case 'date_desc':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        default:
+          return 0
+      }
+    })
+  } else {
+    // Default sort by date desc
+    campaignsWithDetails = [...campaignsWithDetails].sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+  }
 
   const badgeVariantMap: Record<string, 'success' | 'secondary' | 'default'> = {
     active: 'success',
@@ -82,9 +116,12 @@ export default async function CampaignsPage({ searchParams }: Props): Promise<Re
     <div className="container max-w-4xl py-8">
       <div className="mb-8">
         <h1 className="mb-1 text-2xl font-semibold tracking-tight">Campaigns</h1>
-        <p className="text-sm text-muted-foreground mb-4">{sortedCampaigns.length} total campaigns</p>
+        <p className="text-sm text-muted-foreground mb-4">{campaignsWithDetails.length} total campaigns</p>
         <CampaignFilters 
-          projects={projects} 
+          projects={projects.map(project => ({
+            id: project.id,
+            title: project.title
+          }))} 
           briefs={briefs.map(brief => ({
             id: brief.id,
             title: brief.title,
@@ -94,51 +131,50 @@ export default async function CampaignsPage({ searchParams }: Props): Promise<Re
       </div>
 
       <div className="grid gap-4">
-        {sortedCampaigns.map(campaign => {
-          const brief = briefs.find(b => b.id === campaign.briefId)
-          const project = projects.find(p => p.id === campaign.projectId)
-
-          return (
-            <Link key={campaign.id} href={`/campaigns/${campaign.id}`}>
-              <Card className="transition-colors hover:bg-muted/50">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">
-                      {campaign.title}
-                    </CardTitle>
-                    <Badge variant={badgeVariantMap[campaign.status] || 'default'}>
-                      {campaign.status}
-                    </Badge>
-                  </div>
-                  <CardDescription className="line-clamp-2">
-                    {campaign.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col gap-2">
-                    {brief && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <FileText className="h-4 w-4" />
-                        <span>
-                          {brief.title} ({brief.type.split('_').map(word => 
-                            word.charAt(0).toUpperCase() + word.slice(1)
-                          ).join(' ')})
-                        </span>
-                      </div>
-                    )}
-                    <Separator />
-                    <div className="text-sm text-muted-foreground">
-                      Created {formatDistanceToNow(new Date(campaign.createdAt), { addSuffix: true })}
+        {campaignsWithDetails.map(campaign => (
+          <Link key={campaign.id} href={`/campaigns/${campaign.id}`}>
+            <Card className="transition-colors hover:bg-muted/50">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">
+                    {campaign.companyTitle}
+                  </CardTitle>
+                  <Badge variant={badgeVariantMap[campaign.status] || 'default'}>
+                    {campaign.status}
+                  </Badge>
+                </div>
+                <CardDescription className="line-clamp-2">
+                  {campaign.companyDescription}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      <span>{campaign.submissionCount} submissions</span>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </Link>
-          )
-        })}
+                  {campaign.briefTitle && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <FileText className="h-4 w-4" />
+                      <span>
+                        {campaign.briefTitle}
+                      </span>
+                    </div>
+                  )}
+                  <Separator />
+                  <div className="text-sm text-muted-foreground">
+                    Created {formatDistanceToNow(new Date(campaign.createdAt), { addSuffix: true })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
       </div>
 
-      {sortedCampaigns.length === 0 && (
+      {campaignsWithDetails.length === 0 && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-8 text-center">
             <h3 className="mb-2 text-lg font-medium">No campaigns found</h3>
