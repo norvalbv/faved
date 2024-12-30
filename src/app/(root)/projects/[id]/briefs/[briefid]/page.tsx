@@ -3,9 +3,12 @@ import type { BriefMetadata } from '@/lib/types/brief'
 import { Badge } from '@/src/components/ui/badge'
 import { Card, CardContent } from '@/src/components/ui/card'
 import { Separator } from '@/src/components/ui/separator'
-import { CheckCircle, Clock, FileText, Link as LinkIcon, Target } from 'lucide-react'
+import { CheckCircle, FileText, Link as LinkIcon, Target } from 'lucide-react'
 import { notFound } from 'next/navigation'
 import { ReactElement } from 'react'
+import { BriefGuidelines } from './brief-guidelines'
+import { BriefSubmissionForm } from './brief-submission'
+import { BriefTimeline } from './brief-timeline'
 
 interface Props {
   params: {
@@ -92,32 +95,7 @@ export default async function BriefDetailPage({ params }: Props): Promise<ReactE
 
             {/* Guidelines Section */}
             {metadata.guidelines && metadata.guidelines.length > 0 && (
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-5 w-5 text-primary" />
-                      <h2 className="text-xl font-semibold">Guidelines</h2>
-                    </div>
-                    <Separator className="my-4" />
-                    <div className="space-y-8">
-                      {metadata.guidelines.map((section, sectionIndex) => {
-                        const items = Array.isArray(section) ? section : section.items
-                        const category = typeof section === 'object' ? section.category : null
-
-                        return (
-                          <div key={sectionIndex}>
-                            {category && (
-                              <h3 className="font-medium mb-3 text-lg">{category}</h3>
-                            )}
-                            {renderListItems(items)}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <BriefGuidelines guidelines={metadata.guidelines} />
             )}
 
             {/* Examples Section */}
@@ -181,31 +159,14 @@ export default async function BriefDetailPage({ params }: Props): Promise<ReactE
           {/* Timeline Sidebar */}
           <div>
             {metadata.collaborationTimeline && metadata.collaborationTimeline.length > 0 && (
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-5 w-5 text-primary" />
-                      <h2 className="text-xl font-semibold">Timeline</h2>
-                    </div>
-                    <Separator className="my-4" />
-                    <div className="relative space-y-6 before:absolute before:left-4 before:top-2 before:h-[calc(100%-2rem)] before:w-px before:bg-border">
-                      {metadata.collaborationTimeline.map((item, index) => (
-                        <div key={index} className="relative grid gap-2 pl-12">
-                          <div className="absolute left-2.5 top-2 h-3 w-3 rounded-full border-2 border-primary bg-background" />
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">Step {item.step}</span>
-                          </div>
-                          <h3 className="font-medium">{item.title}</h3>
-                          <p className="text-sm text-muted-foreground">{item.description}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <BriefTimeline steps={metadata.collaborationTimeline} />
             )}
           </div>
+        </div>
+
+        {/* Submission Form */}
+        <div className="mt-8">
+          <BriefSubmissionForm briefId={brief.id} />
         </div>
       </div>
     </div>
