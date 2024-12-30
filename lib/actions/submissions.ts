@@ -6,8 +6,7 @@ import { BriefRepository } from '../data-store/repositories/brief'
 import { Submission, SubmissionMetadata } from '../types/submission'
 import { auth } from '../utils/auth'
 import { nanoid } from 'nanoid'
-import { analyzeSubmission } from '../services/ai'
-import type { AnalysisResult } from '../services/ai'
+import { analyzeSubmission } from './analyze'
 
 export async function getSubmission(id: string) {
   try {
@@ -136,18 +135,26 @@ export async function createSubmission(data: {
 
         const aiAnalysis = await analyzeSubmission(mockSubmission, briefWithMetadata)
         
-        // Add AI feedback to history
+        // Format AI feedback
+        const formattedAnalysis = [
+          aiAnalysis.matches.length > 0 && `ANALYSIS:\n${aiAnalysis.matches.map(m => `${m.category}:\n${m.items.join('\n')}`).join('\n\n')}`,
+          aiAnalysis.mismatches.length > 0 && `AREAS FOR IMPROVEMENT:\n${aiAnalysis.mismatches.map(m => `${m.category}:\n${m.items.join('\n')}`).join('\n\n')}`,
+          aiAnalysis.brandSafety.issues.length > 0 && `BRAND SAFETY ISSUES:\n${aiAnalysis.brandSafety.issues.join('\n')}`,
+          aiAnalysis.sellingPoints.missing.length > 0 && `MISSING KEY POINTS:\n${aiAnalysis.sellingPoints.missing.join('\n')}`
+        ].filter(Boolean).join('\n\n')
+        
+        const isRejected = !aiAnalysis.brandSafety.pass
+        
         feedbackHistory.push({
-          feedback: aiAnalysis.matches.map((m: { category: string; items: string[] }) => `${m.category}:\n${m.items.join('\n')}`).join('\n\n') +
-            (aiAnalysis.mismatches.length > 0 ? `\n\nAreas for Improvement:\n${aiAnalysis.mismatches.map((m: { items: string[] }) => m.items.join('\n')).join('\n')}` : ''),
+          feedback: formattedAnalysis,
           createdAt: new Date().toISOString(),
-          status: aiAnalysis.brandSafety.pass ? 'comment' : 'rejected',
+          status: isRejected ? 'rejected' : 'comment',
           isAiFeedback: true
         })
 
         // Update metadata with rejection status
-        data.metadata.status = aiAnalysis.brandSafety.pass ? 'pending' : 'rejected'
-        data.metadata.stageId = aiAnalysis.brandSafety.pass ? '1' : '3' // Stage 3 for rejected, Stage 1 for pending
+        data.metadata.status = isRejected ? 'rejected' : 'pending'
+        data.metadata.stageId = isRejected ? '3' : '1' // Stage 3 for rejected, Stage 1 for pending
       } catch (error) {
         console.error('AI analysis failed:', error)
         // Continue with submission creation even if AI analysis fails

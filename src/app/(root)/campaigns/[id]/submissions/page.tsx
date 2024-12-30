@@ -46,13 +46,8 @@ export default async function CampaignSubmissionsPage({ params }: Props): Promis
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <h1 className="text-2xl font-semibold tracking-tight">{project?.title || 'Unknown Company'}</h1>
-              <Badge variant="outline" className="text-xs">
-                Campaign #{campaign.id.slice(0, 8)}
-              </Badge>
-            </div>
-            <p className="text-muted-foreground">{project?.description || 'Description not available'}</p>
+            <h1 className="mb-2 text-2xl font-semibold tracking-tight">{project?.title || 'Unknown Company'}</h1>
+            <p className="text-muted-foreground">{project?.description || campaign.description}</p>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant={campaign.status === 'active' ? 'success' : 'secondary'}>

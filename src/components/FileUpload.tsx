@@ -118,19 +118,19 @@ export const FileUpload = ({
   })
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-2">
       <div
         {...getRootProps()}
-        className="relative grid cursor-pointer place-items-center gap-4 rounded-lg border-2 border-dashed border-gray-300 p-12 text-center transition-colors hover:bg-gray-50"
+        className="relative flex cursor-pointer flex-col items-center justify-center gap-4 p-6 rounded-xl border-2 border-dashed border-gray-200 bg-secondary py-6 text-center transition-all hover:border-primary/50 hover:bg-secondary/80"
       >
         <input {...getInputProps()} />
-        <div className="grid place-items-center gap-2">
+        <div className="flex flex-col items-center gap-1">
           {isUploading ? (
-            <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+            <Loader2 className="size-8 animate-spin text-primary" />
           ) : (
-            <Cloud className="h-8 w-8 text-gray-500" />
+            <Cloud className="size-8 text-primary" />
           )}
-          <div className="grid gap-1">
+          <div className="flex flex-col gap-0.5">
             <p className="text-sm font-medium text-gray-900">
               {isDragActive 
                 ? 'Drop your file here' 
@@ -146,22 +146,26 @@ export const FileUpload = ({
           </div>
         </div>
         {!isUploading && (
-          <Button type="button" size="sm" className="absolute bottom-4 opacity-60">
+          <Button 
+            type="button" 
+            size="sm" 
+            className="bg-primary text-white hover:bg-primary/90"
+          >
             Select File
           </Button>
         )}
       </div>
 
       {isUploading && (
-        <div className="grid gap-2">
+        <div className="grid gap-1.5">
           <div className="flex items-center gap-2">
-            <File className="h-4 w-4 text-blue-500" />
-            <div className="flex-1 text-sm font-medium">
+            <File className="h-4 w-4 text-primary" />
+            <div className="flex-1 text-sm font-medium text-gray-900">
               {mode === 'import' ? 'Processing submissions...' : 'Uploading file...'}
             </div>
             <div className="text-xs text-gray-500">{Math.round(uploadProgress)}%</div>
           </div>
-          <Progress value={uploadProgress} />
+          <Progress value={uploadProgress} className="h-1.5 bg-secondary" />
         </div>
       )}
     </div>

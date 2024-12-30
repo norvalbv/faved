@@ -82,24 +82,24 @@ export const BriefSubmissionForm = ({ briefId }: Props): ReactElement => {
   }, [router])
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium">Submit Content</h3>
-        <p className="text-sm text-muted-foreground">
+    <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="space-y-2">
+        <h3 className="text-xl font-semibold text-gray-900">Submit Content</h3>
+        <p className="text-sm text-gray-500">
           Submit your content for review. Make sure it aligns with the brief guidelines.
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="space-y-2">
-          <label className="text-sm font-medium">
+          <label className="text-sm font-medium text-gray-900">
             Submission Type
           </label>
           <Select
             value={type}
             onValueChange={(value: SubmissionType) => setType(value)}
           >
-            <SelectTrigger>
+            <SelectTrigger className="bg-secondary border-gray-200">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -114,21 +114,21 @@ export const BriefSubmissionForm = ({ briefId }: Props): ReactElement => {
 
         {type === 'draft_script' ? (
           <div className="space-y-2">
-            <label htmlFor="content" className="text-sm font-medium">
+            <label htmlFor="content" className="text-sm font-medium text-gray-900">
               Script Content
             </label>
             <Textarea
               id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="min-h-[8rem] resize-none"
+              className="min-h-[12rem] resize-none bg-secondary border-gray-200 focus-visible:ring-primary"
               placeholder="Enter your script here..."
               required
             />
           </div>
         ) : (
           <div className="space-y-2">
-            <label className="text-sm font-medium">
+            <label className="text-sm font-medium text-gray-900">
               Upload {type === 'draft_video' ? 'Draft' : 'Final'} Video
             </label>
             <FileUpload 
@@ -141,14 +141,14 @@ export const BriefSubmissionForm = ({ briefId }: Props): ReactElement => {
       </div>
 
       {error && (
-        <p className="text-sm text-red-500">{error}</p>
+        <p className="text-sm font-medium text-destructive">{error}</p>
       )}
 
       {type === 'draft_script' && (
         <Button
           type="submit"
           disabled={isSubmitting || !content.trim()}
-          className="w-full"
+          className="w-full bg-primary text-white hover:bg-primary/90 disabled:bg-gray-100 disabled:text-gray-400"
         >
           {isSubmitting ? 'Submitting...' : 'Submit for Review'}
         </Button>
