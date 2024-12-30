@@ -59,7 +59,7 @@ export default async function SubmissionPage({ params }: SubmissionPageProps): P
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold tracking-tight">Submission Details</h1>
             <Link
-              href={`/briefs/${briefId}`}
+              href={`/projects/${briefId}`}
               className="text-sm text-primary hover:underline"
             >
               View Brief

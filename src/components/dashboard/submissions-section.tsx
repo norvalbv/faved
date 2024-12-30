@@ -40,7 +40,7 @@ export const SubmissionsSection = ({ submissions }: SubmissionsSectionProps) => 
           {submissions.map((submission) => (
             <Link
               key={submission.id}
-              href={`/briefs/${submission.briefId}/submissions/${submission.id}`}
+              href={`/projects/${submission.briefId}/submissions/${submission.id}`}
               className="block"
             >
               <div className="rounded-lg border bg-card p-4 hover:bg-accent/50">

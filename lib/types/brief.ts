@@ -1,29 +1,46 @@
-export interface Brief {
-  id: string
-  title: string
-  type: "game_design" | "visual_creator" | "filmmaking" | "logo_design" | "booktuber"
-  description: string
-  collaborationTimeline: CollaborationStep[]
-  overview: {
+export interface BriefMetadata {
+  overview?: string | {
     what: string
     gettingStarted: string
   }
-  guidelines: BriefGuideline[]
-  examples?: {
+  guidelines?: Array<{
+    category: string
+    items: string[]
+  }>
+  collaborationTimeline?: Array<{
+    step: number
+    title: string
+    description: string
+  }>
+  examples?: Array<{
     title: string
     url: string
-  }[]
-  createdAt: Date
-  updatedAt: Date
+  }>
+  productionTools?: {
+    title: string
+    items: string[]
+  }
+  designProcess?: {
+    title: string
+    items: string[]
+  }
+  writingTools?: {
+    title: string
+    items: string[]
+  }
+  suggestions?: {
+    title: string
+    items: string[]
+  }
 }
 
-export interface CollaborationStep {
-  step: number
+export interface Brief {
+  id: string
+  projectId: string | null
   title: string
   description: string
-}
-
-export interface BriefGuideline {
-  category: string
-  items: string[]
+  type: 'game_design' | 'visual_creator' | 'filmmaking' | 'logo_design' | 'booktuber'
+  metadata: BriefMetadata
+  createdAt: Date
+  updatedAt: Date
 } 
