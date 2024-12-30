@@ -1,6 +1,6 @@
 import { drizzleDb } from '..'
 import { briefs } from '../schema'
-import { ALL_BRIEFS } from '../constants/briefs'
+import { ALL_BRIEFS } from '../../constants/briefs'
 import { projects } from '../schema/projects'
 
 async function seed() {

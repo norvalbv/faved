@@ -36,11 +36,11 @@ export interface BriefMetadata {
 
 export interface Brief {
   id: string
-  projectId: string | null
+  projectId?: string | null
   title: string
   description: string
   type: 'game_design' | 'visual_creator' | 'filmmaking' | 'logo_design' | 'booktuber'
-  metadata: BriefMetadata
+  metadata?: BriefMetadata
   createdAt: Date
   updatedAt: Date
 } 
