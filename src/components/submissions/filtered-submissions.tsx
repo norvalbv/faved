@@ -1,68 +1,83 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { startOfToday, startOfWeek, startOfMonth, isAfter } from "date-fns"
-import type { Submission } from "@/types/submission"
-import { SubmissionFilters } from "./submission-filters"
-import { SubmissionsList } from "./submissions-list"
+import { ReactElement } from 'react'
+import { useState, useMemo } from 'react'
+import { startOfToday, startOfWeek, startOfMonth, isAfter, formatDistanceToNow } from 'date-fns'
+import type { Submission } from '@/src/types/submission'
+import { SubmissionFilters } from './submission-filters'
+import type { SubmissionType, SubmissionStatus } from '@/src/types/submission'
 
 interface FilteredSubmissionsProps {
-  initialSubmissions: Submission[]
+  submissions: Submission[]
 }
 
-export const FilteredSubmissions = ({ initialSubmissions }: FilteredSubmissionsProps): React.ReactElement => {
-  const [filteredSubmissions, setFilteredSubmissions] = useState(initialSubmissions)
+type Filters = {
+  type?: SubmissionType
+  status?: SubmissionStatus
+  dateRange?: 'today' | 'week' | 'month' | 'all'
+}
 
-  const handleFilter = useMemo(() => {
-    return (filters: {
-      type?: Submission["type"]
-      status?: Submission["status"]
-      dateRange?: "today" | "week" | "month" | "all"
-    }) => {
-      let filtered = initialSubmissions
+export const FilteredSubmissions = ({ submissions }: FilteredSubmissionsProps): ReactElement => {
+  const [filters, setFilters] = useState<Filters>({
+    dateRange: 'all'
+  })
 
-      // Filter by type
-      if (filters.type) {
-        filtered = filtered.filter((submission) => submission.type === filters.type)
+  const filteredSubmissions = useMemo(() => {
+    let filtered = submissions
+
+    // Filter by date range
+    if (filters.dateRange && filters.dateRange !== 'all') {
+      const now = new Date()
+      let startDate: Date
+
+      switch (filters.dateRange) {
+        case 'today':
+          startDate = startOfToday()
+          break
+        case 'week':
+          startDate = startOfWeek(now)
+          break
+        case 'month':
+          startDate = startOfMonth(now)
+          break
+        default:
+          return filtered
       }
 
-      // Filter by status
-      if (filters.status) {
-        filtered = filtered.filter((submission) => submission.status === filters.status)
-      }
-
-      // Filter by date range
-      if (filters.dateRange && filters.dateRange !== "all") {
-        const now = new Date()
-        let startDate: Date
-
-        switch (filters.dateRange) {
-          case "today":
-            startDate = startOfToday()
-            break
-          case "week":
-            startDate = startOfWeek(now)
-            break
-          case "month":
-            startDate = startOfMonth(now)
-            break
-          default:
-            startDate = now
-        }
-
-        filtered = filtered.filter((submission) => isAfter(submission.createdAt, startDate))
-      }
-
-      setFilteredSubmissions(filtered)
+      filtered = filtered.filter((submission) => isAfter(submission.createdAt, startDate))
     }
-  }, [initialSubmissions])
+
+    // Filter by type
+    if (filters.type) {
+      filtered = filtered.filter((submission) => submission.type === filters.type)
+    }
+
+    // Filter by status
+    if (filters.status) {
+      filtered = filtered.filter((submission) => submission.status === filters.status)
+    }
+
+    return filtered
+  }, [submissions, filters])
 
   return (
     <div className="space-y-6">
       <div className="rounded-lg border bg-card p-4">
-        <SubmissionFilters onFilter={handleFilter} />
+        <SubmissionFilters onFilter={setFilters} />
       </div>
-      <SubmissionsList items={filteredSubmissions} />
+      <div className="space-y-4">
+        {filteredSubmissions.map((submission) => (
+          <div key={submission.id} className="rounded-lg border bg-card p-4">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm font-medium">{submission.type}</span>
+              <span className="text-xs text-muted-foreground">
+                {formatDistanceToNow(submission.createdAt, { addSuffix: true })}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground line-clamp-2">{submission.content}</p>
+          </div>
+        ))}
+      </div>
     </div>
   )
 } 

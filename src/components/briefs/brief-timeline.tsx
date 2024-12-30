@@ -1,22 +1,26 @@
-import type { CollaborationStep } from "@/types/brief"
-
 interface BriefTimelineProps {
-  steps: CollaborationStep[]
+  steps: Array<{
+    step: number
+    title: string
+    description: string
+  }>
 }
 
-export const BriefTimeline = ({ steps }: BriefTimelineProps): React.ReactElement => {
+export const BriefTimeline = ({ steps }: BriefTimelineProps) => {
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-semibold tracking-tight">Collaboration Timeline</h2>
-      <div className="space-y-6">
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold tracking-tight">Collaboration Timeline</h2>
+      <div className="space-y-8">
         {steps.map((step) => (
           <div key={step.step} className="flex gap-4">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted font-medium">
-              {step.step}
+            <div className="flex-none">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
+                {step.step}
+              </div>
             </div>
-            <div className="space-y-1">
-              <h3 className="font-medium leading-none">{step.title}</h3>
-              <p className="text-sm text-muted-foreground">{step.description}</p>
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium">{step.title}</h3>
+              <p className="text-sm text-gray-600">{step.description}</p>
             </div>
           </div>
         ))}

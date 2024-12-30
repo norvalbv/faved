@@ -1,24 +1,28 @@
-import type { BriefGuideline } from "@/types/brief"
-
 interface BriefGuidelinesProps {
-  guidelines: BriefGuideline[]
+  guidelines: Array<{
+    category: string
+    items: string[]
+  }>
 }
 
-export const BriefGuidelines = ({ guidelines }: BriefGuidelinesProps): React.ReactElement => {
+export const BriefGuidelines = ({ guidelines }: BriefGuidelinesProps) => {
   return (
     <div className="space-y-6">
-      {guidelines.map((guideline, index) => (
-        <div key={index} className="space-y-3">
-          <h3 className="text-lg font-medium">{guideline.category}</h3>
-          <ul className="list-disc space-y-2 pl-5">
-            {guideline.items.map((item, itemIndex) => (
-              <li key={itemIndex} className="text-muted-foreground">
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
+      <h2 className="text-xl font-semibold tracking-tight">Guidelines</h2>
+      <div className="space-y-8">
+        {guidelines.map((guideline, index) => (
+          <div key={index} className="space-y-4">
+            <h3 className="text-lg font-medium">{guideline.category}</h3>
+            <ul className="list-disc list-inside space-y-2">
+              {guideline.items.map((item, itemIndex) => (
+                <li key={itemIndex} className="text-sm text-gray-600">
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
     </div>
   )
 } 

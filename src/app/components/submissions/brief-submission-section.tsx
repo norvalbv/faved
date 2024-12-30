@@ -1,21 +1,16 @@
 "use client"
 
-import type { SubmissionType } from "@/app/types/submission"
-import { SubmissionForm } from "./submission-form"
+import { SubmissionForm } from './submission-form'
 
 interface BriefSubmissionSectionProps {
   briefId: string
 }
 
-export const BriefSubmissionSection = ({ briefId }: BriefSubmissionSectionProps): React.ReactElement => {
-  const handleSubmit = async (data: { type: SubmissionType; content: string }) => {
-    // In a real app, this would make an API call
-    console.log("Submitting for brief:", briefId, data)
-  }
-
+export const BriefSubmissionSection = ({ briefId }: BriefSubmissionSectionProps) => {
   return (
-    <div className="rounded-lg border bg-card p-6">
-      <SubmissionForm onSubmit={handleSubmit} />
+    <div className="bg-white rounded-lg shadow p-6">
+      <h2 className="text-xl font-semibold mb-4">Submit Content</h2>
+      <SubmissionForm briefId={briefId} />
     </div>
   )
 } 

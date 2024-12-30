@@ -13,10 +13,10 @@ export const FeedbackList = ({ items }: FeedbackListProps): ReactElement => {
     switch (type) {
       case 'approval':
         return 'text-green-600'
-      case 'rejection':
-        return 'text-red-600'
-      default:
+      case 'suggestion':
         return 'text-blue-600'
+      default:
+        return 'text-red-600'
     }
   }
 
@@ -24,10 +24,10 @@ export const FeedbackList = ({ items }: FeedbackListProps): ReactElement => {
     switch (type) {
       case 'approval':
         return 'Approved'
-      case 'rejection':
-        return 'Rejected'
-      default:
+      case 'suggestion':
         return 'Suggestion'
+      default:
+        return 'Rejected'
     }
   }
 
