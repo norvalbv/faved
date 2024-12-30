@@ -34,10 +34,26 @@ export async function listSubmissions(briefId?: string) {
 
     // 2. Get submissions
     const submissions = await SubmissionRepository.list(briefId)
-
     return submissions
   } catch (error) {
     console.error('Error fetching submissions:', error)
+    throw error
+  }
+}
+
+export async function listRecentSubmissions(limit: number = 5) {
+  try {
+    // 1. Verify user is logged in
+    const { userId } = auth()
+    if (!userId) {
+      throw new Error('Unauthorized')
+    }
+
+    // 2. Get recent submissions
+    const submissions = await SubmissionRepository.listRecent(limit)
+    return submissions
+  } catch (error) {
+    console.error('Error fetching recent submissions:', error)
     throw error
   }
 }

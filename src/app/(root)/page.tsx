@@ -1,39 +1,20 @@
 import { Metadata } from "next"
 import { BriefCard } from "@/src/components/dashboard/brief-card"
 import { SubmissionsSection } from "@/src/components/dashboard/submissions-section"
-import { GAME_DESIGN_BRIEF } from "@/lib/data-store/constants/briefs"
-import type { Submission } from "@/src/types/submission"
+import { listBriefs } from "@/lib/actions/briefs"
+import { listRecentSubmissions } from "@/lib/actions/submissions"
 
 export const metadata: Metadata = {
   title: "Dashboard | Content Review Platform",
   description: "Manage and review content submissions",
 }
 
-// Temporary mock data
-const mockSubmissions: Submission[] = [
-  {
-    id: "1",
-    type: "video_topic",
-    content: "Game Design Workflow Overview",
-    status: "pending",
-    briefId: GAME_DESIGN_BRIEF.id,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    influencerId: "user-1",
-  },
-  {
-    id: "2",
-    type: "draft_script",
-    content: "Character Design Process",
-    status: "approved",
-    briefId: GAME_DESIGN_BRIEF.id,
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-    influencerId: "user-1",
-  },
-]
+export default async function HomePage(): Promise<React.ReactElement> {
+  const [briefs, submissions] = await Promise.all([
+    listBriefs(),
+    listRecentSubmissions(5)
+  ])
 
-export default function HomePage(): React.ReactElement {
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
       {/* Briefs Section */}
@@ -47,8 +28,9 @@ export default function HomePage(): React.ReactElement {
               </p>
             </div>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              <BriefCard brief={GAME_DESIGN_BRIEF} />
-              {/* More briefs will be added here */}
+              {briefs.map((brief) => (
+                <BriefCard key={brief.id} brief={brief} />
+              ))}
             </div>
           </div>
         </div>
@@ -57,7 +39,7 @@ export default function HomePage(): React.ReactElement {
       {/* Recent Submissions */}
       <section className="py-16 bg-white">
         <div className="faved-container">
-          <SubmissionsSection submissions={mockSubmissions} />
+          <SubmissionsSection submissions={submissions} />
         </div>
       </section>
     </div>

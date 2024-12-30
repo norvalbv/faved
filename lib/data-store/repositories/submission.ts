@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { eq, desc } from 'drizzle-orm'
 import { drizzleDb } from '..'
 import { submissions } from '../schema'
 import { nanoid } from 'nanoid'
@@ -43,6 +43,15 @@ export class SubmissionRepository {
     }
 
     return query.execute()
+  }
+
+  static async listRecent(limit: number = 5) {
+    return drizzleDb
+      .select()
+      .from(submissions)
+      .orderBy(desc(submissions.createdAt))
+      .limit(limit)
+      .execute()
   }
 
   static async updateStatus(id: string, status: 'pending' | 'approved' | 'rejected') {
