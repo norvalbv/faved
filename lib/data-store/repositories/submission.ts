@@ -62,24 +62,12 @@ export class SubmissionRepository {
 
   static async create(data: CreateSubmissionInput): Promise<void> {
     const id = nanoid()
-    const campaignId = nanoid()
     const now = new Date()
-
-    // First create the campaign
-    await drizzleDb.insert(campaigns).values({
-      id: campaignId,
-      projectId: data.projectId || 'milanote_project_001',
-      title: `Submission ${now.toLocaleDateString()}`,
-      description: 'Auto-generated campaign for submission',
-      status: 'active',
-      createdAt: now,
-      updatedAt: now,
-    }).execute()
 
     // Then create the submission
     await drizzleDb.insert(submissions).values({
       id,
-      campaignId,
+      campaignId: data.campaignId,
       type: data.type,
       content: data.content,
       metadata: data.metadata || {},

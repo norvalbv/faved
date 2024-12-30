@@ -1,11 +1,10 @@
 'use client'
 
-import { ReactElement, useState } from 'react'
+import { ReactElement, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/src/components/ui/button'
 import { Textarea } from '@/src/components/ui/textarea'
 import { FileUpload } from '@/src/components/FileUpload'
-import { nanoid } from 'nanoid'
 import {
   Select,
   SelectContent,
@@ -35,8 +34,13 @@ export const BriefSubmissionForm = ({ briefId }: Props): ReactElement => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (type !== 'draft_script' || !content.trim()) {
+      return
+    }
+    
     setIsSubmitting(true)
     setError(null)
     
@@ -44,23 +48,24 @@ export const BriefSubmissionForm = ({ briefId }: Props): ReactElement => {
       const metadata: Omit<SubmissionMetadata, 'userId'> = {
         type,
         message: content,
-        stageId: type === 'draft_script' ? '1' : type === 'draft_video' ? '2' : '3',
+        stageId: '1',
         input: content,
         sender: 'Anonymous',
         submitted: true,
       }
 
-      const result = await createSubmission({
-        campaignId: nanoid(),
+      const submissionResult = await createSubmission({
+        briefId,
         content,
         metadata
       })
 
-      if (result.success) {
+      if (submissionResult.success) {
         setContent('')
         router.refresh()
+        router.push(`/campaigns/${submissionResult.campaignId}`)
       } else {
-        setError(result.error || 'Failed to submit content')
+        setError(submissionResult.error || 'Failed to submit content')
       }
     } catch (error) {
       console.error('Error submitting content:', error)
@@ -68,7 +73,12 @@ export const BriefSubmissionForm = ({ briefId }: Props): ReactElement => {
     } finally {
       setIsSubmitting(false)
     }
-  }
+  }, [briefId, content, type, router])
+
+  const handleUploadComplete = useCallback((campaignId: string) => {
+    router.refresh()
+    router.push(`/campaigns/${campaignId}`)
+  }, [router])
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -120,7 +130,11 @@ export const BriefSubmissionForm = ({ briefId }: Props): ReactElement => {
             <label className="text-sm font-medium">
               Upload {type === 'draft_video' ? 'Draft' : 'Final'} Video
             </label>
-            <FileUpload briefId={briefId} onUploadComplete={(url) => setContent(url)} />
+            <FileUpload 
+              briefId={briefId} 
+              onUploadComplete={handleUploadComplete}
+              submissionType={type}
+            />
           </div>
         )}
       </div>
@@ -129,13 +143,15 @@ export const BriefSubmissionForm = ({ briefId }: Props): ReactElement => {
         <p className="text-sm text-red-500">{error}</p>
       )}
 
-      <Button
-        type="submit"
-        disabled={isSubmitting || (!content && type !== 'draft_script')}
-        className="w-full"
-      >
-        {isSubmitting ? 'Submitting...' : 'Submit for Review'}
-      </Button>
+      {type === 'draft_script' && (
+        <Button
+          type="submit"
+          disabled={isSubmitting || !content.trim()}
+          className="w-full"
+        >
+          {isSubmitting ? 'Submitting...' : 'Submit for Review'}
+        </Button>
+      )}
     </form>
   )
 } 

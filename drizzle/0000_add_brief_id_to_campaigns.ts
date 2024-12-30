@@ -1,6 +1,7 @@
 import { pgTable, text, timestamp, jsonb } from 'drizzle-orm/pg-core'
-import { projects } from './projects'
-import { briefs } from './briefs'
+import { sql } from 'drizzle-orm'
+import { briefs } from '../lib/data-store/schema/briefs'
+import { projects } from '../lib/data-store/schema/projects'
 
 export const campaigns = pgTable('campaigns', {
   id: text('id').primaryKey(),
@@ -14,7 +15,4 @@ export const campaigns = pgTable('campaigns', {
   metadata: jsonb('metadata'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
-})
-
-export type Campaign = typeof campaigns.$inferSelect
-export type NewCampaign = typeof campaigns.$inferInsert
+}) 

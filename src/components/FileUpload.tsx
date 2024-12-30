@@ -2,17 +2,19 @@
 
 import { ReactElement, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { importSubmissions } from '@/lib/actions/import'
 import { Button } from './ui/button'
 import { cn } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from './ui/alert'
+import { createSubmission } from '@/lib/actions/submissions'
+import type { SubmissionMetadata } from '@/lib/types/submission'
 
 interface FileUploadProps {
-  briefId?: string
-  onUploadComplete?: (url: string) => void
+  briefId: string
+  onUploadComplete?: (campaignId: string) => void
   mode?: 'import' | 'submission'
   accept?: Record<string, string[]>
+  submissionType?: 'draft_video' | 'final_video'
 }
 
 export const FileUpload = ({ 
@@ -23,11 +25,11 @@ export const FileUpload = ({
     'video/*': ['.mp4', '.mov', '.avi'],
     'image/*': ['.jpg', '.jpeg', '.png'],
     'application/pdf': ['.pdf']
-  }
+  },
+  submissionType = 'draft_video'
 }: FileUploadProps): ReactElement => {
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [result, setResult] = useState<any>(null)
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null)
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -39,28 +41,33 @@ export const FileUpload = ({
 
       setIsUploading(true)
       setError(null)
-      setResult(null)
 
       try {
         const file = files[0]
         
-        if (mode === 'import') {
-          const fileContent = await file.text()
-          const importResult = await importSubmissions(fileContent)
-          
-          if (importResult.success) {
-            setResult(importResult)
-          } else {
-            setError(importResult.error || 'Failed to import file')
+        // TODO: Implement actual file upload logic here
+        // For now, simulating with a fake URL
+        const fakeUrl = `https://storage.example.com/${file.name}`
+        setUploadedFileUrl(fakeUrl)
+
+        // Create submission with the uploaded file URL
+        const submissionResult = await createSubmission({
+          briefId,
+          content: fakeUrl,
+          metadata: {
+            type: submissionType,
+            message: `Uploaded file: ${file.name}`,
+            stageId: submissionType === 'draft_video' ? '2' : '3',
+            input: fakeUrl,
+            sender: 'Anonymous',
+            submitted: true
           }
+        })
+
+        if (submissionResult.success && onUploadComplete) {
+          onUploadComplete(submissionResult.campaignId || '')
         } else {
-          // TODO: Implement actual file upload logic here
-          // For now, simulating with a fake URL
-          const fakeUrl = `https://storage.example.com/${file.name}`
-          setUploadedFileUrl(fakeUrl)
-          if (onUploadComplete) {
-            onUploadComplete(fakeUrl)
-          }
+          setError(submissionResult.error || 'Failed to create submission')
         }
       } catch (error) {
         console.error('Error uploading file:', error)
@@ -115,19 +122,7 @@ export const FileUpload = ({
         </Alert>
       )}
 
-      {mode === 'import' && result && (
-        <Alert variant={result.summary.failed > 0 ? 'warning' : 'success'}>
-          <AlertTitle>Import Complete</AlertTitle>
-          <AlertDescription>
-            Successfully imported {result.summary.successful} submissions.
-            {result.summary.failed > 0 && (
-              <> Failed to import {result.summary.failed} submissions.</>
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {mode === 'submission' && uploadedFileUrl && (
+      {uploadedFileUrl && !error && (
         <Alert>
           <AlertTitle>Upload Complete</AlertTitle>
           <AlertDescription>

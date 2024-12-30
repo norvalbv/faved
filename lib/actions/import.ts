@@ -1,11 +1,8 @@
 'use server'
 
 import { parse } from 'csv-parse/sync'
-import { SubmissionRepository } from '@/lib/data-store/repositories/submission'
-import { CampaignRepository } from '@/lib/data-store/repositories/campaign'
+import { createSubmission } from './submissions'
 import { auth } from '@/lib/utils/auth'
-import type { SubmissionMetadata } from '@/lib/types/submission'
-import type { Campaign } from '@/lib/types/campaign'
 
 interface CSVRecord {
   id: string
@@ -45,95 +42,55 @@ export async function importSubmissions(fileContent: string) {
       trim: true,
     }) as CSVRecord[]
 
-    // Track unique campaign IDs
-    const campaignIds = new Set<string>()
-    records.forEach(record => {
-      if (record.campaignId?.trim()) {
-        campaignIds.add(record.campaignId.trim())
-      }
-    })
-
-    // Create missing campaigns
-    for (const campaignId of campaignIds) {
-      try {
-        const existingCampaign = await CampaignRepository.getById(campaignId)
-        if (!existingCampaign) {
-          const campaign: Omit<Campaign, 'id' | 'createdAt' | 'updatedAt'> = {
-            title: `Campaign ${campaignId.slice(0, 8)}`,
-            description: 'Imported campaign',
-            status: 'active',
-            metadata: {}
-          }
-          await CampaignRepository.create(campaign, campaignId)
-          console.log(`Created campaign: ${campaignId}`)
-        }
-      } catch (error) {
-        console.error(`Failed to create campaign ${campaignId}:`, error)
-        throw new Error(`Failed to create campaign ${campaignId}: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      }
-    }
-
     // 3. Process each record
     const results = []
     for (const record of records) {
       try {
-        // Skip if no message or campaign ID
-        if (!record.message?.trim() || !record.campaignId?.trim()) {
+        // Skip if no message
+        if (!record.message?.trim()) {
           results.push({
             success: false,
-            error: !record.message?.trim() ? 'Missing message' : 'Missing campaign ID',
+            error: 'Missing message',
             record,
           })
           continue
         }
 
-        const campaignId = record.campaignId.trim()
         const message = record.message.trim()
 
-        // Verify campaign exists
-        const campaign = await CampaignRepository.getById(campaignId)
-        if (!campaign) {
+        // Create submission (this will also handle campaign creation)
+        const submissionResult = await createSubmission({
+          briefId: record.campaignId?.trim() || 'imported_brief', // Use campaignId as briefId or default
+          content: message,
+          metadata: {
+            type: record.type || 'content',
+            message,
+            stageId: record.stageId || '1',
+            input: record.input || '',
+            sender: record.sender || 'Anonymous',
+            submitted: parseBoolean(record.submitted || ''),
+            importMetadata: {
+              imported: true,
+              importedAt: new Date().toISOString()
+            }
+          }
+        })
+
+        if (submissionResult.success) {
+          results.push({
+            success: true,
+            data: { 
+              campaignId: submissionResult.campaignId,
+              message 
+            }
+          })
+        } else {
           results.push({
             success: false,
-            error: `Campaign ${campaignId} not found`,
+            error: submissionResult.error,
             record,
           })
-          continue
         }
-
-        // Create metadata object
-        const metadata: SubmissionMetadata = {
-          id: record.id,
-          createdAt: record.createdAt || new Date().toISOString(),
-          campaignId,
-          offerId: record.offerId || '',
-          sender: record.sender || '',
-          message,
-          type: record.type || 'content',
-          userId: record.userId || '',
-          stageId: record.stageId || '1',
-          input: record.input || '',
-          dateInput: record.dateInput || '',
-          attachments: record.attachments || '',
-          submitted: parseBoolean(record.submitted || ''),
-          approved: parseBoolean(record.approved || ''),
-          feedback: record.feedback || '',
-          feedbackAttachments: record.feedbackAttachments || ''
-        }
-
-        // Create submission
-        const submission = await SubmissionRepository.create({
-          briefId: campaignId,
-          type: 'submission',
-          content: message,
-          status: parseBoolean(record.approved || '') ? 'approved' : 'pending',
-          metadata
-        })
-
-        results.push({
-          success: true,
-          data: submission,
-        })
       } catch (error) {
         console.error('Error processing record:', error)
         results.push({
@@ -152,8 +109,7 @@ export async function importSubmissions(fileContent: string) {
       summary: {
         total: results.length,
         successful: successCount,
-        failed: failureCount,
-        campaignsCreated: campaignIds.size
+        failed: failureCount
       },
       results,
     }

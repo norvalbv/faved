@@ -15,6 +15,10 @@ export interface SubmissionMetadata {
   approved?: boolean
   feedback?: string
   feedbackAttachments?: string
+  importMetadata?: {
+    imported: boolean
+    importedAt: string
+  }
 }
 
 export interface Submission {

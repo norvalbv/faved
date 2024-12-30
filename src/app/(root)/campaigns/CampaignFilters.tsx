@@ -15,6 +15,7 @@ import { ArrowDownAZ, ArrowUpAZ, Clock } from 'lucide-react'
 type SortOption = 'title_asc' | 'title_desc' | 'date_desc' | 'date_asc'
 type StatusOption = 'all' | 'active' | 'inactive'
 type ProjectOption = 'all' | string
+type BriefTypeOption = 'all' | 'game_design' | 'visual_creator' | 'filmmaking' | 'logo_design' | 'booktuber'
 
 const SORT_OPTIONS = [
   { value: 'title_asc' as const, label: 'Title A-Z', icon: ArrowDownAZ },
@@ -30,35 +31,59 @@ const STATUS_OPTIONS = [
   { value: 'completed' as const, label: 'Completed' },
 ]
 
+const BRIEF_TYPE_OPTIONS = [
+  { value: 'all' as const, label: 'All Brief Types' },
+  { value: 'game_design' as const, label: 'Game Design' },
+  { value: 'visual_creator' as const, label: 'Visual Creator' },
+  { value: 'filmmaking' as const, label: 'Filmmaking' },
+  { value: 'logo_design' as const, label: 'Logo Design' },
+  { value: 'booktuber' as const, label: 'BookTuber' },
+]
+
 interface Props {
   projects: Array<{
     id: string
     title: string
   }>
+  briefs: Array<{
+    id: string
+    title: string
+    type: BriefTypeOption
+  }>
 }
 
-export const CampaignFilters = ({ projects }: Props): ReactElement => {
+export const CampaignFilters = ({ projects, briefs }: Props): ReactElement => {
   const router = useRouter()
   const searchParams = useSearchParams()
   
   const currentSort = (searchParams.get('sort') || 'date_desc') as SortOption
   const currentStatus = (searchParams.get('status') || 'all') as StatusOption
   const currentProjectId = (searchParams.get('projectId') || 'all') as ProjectOption
+  const currentBriefType = (searchParams.get('briefType') || 'all') as BriefTypeOption
+  const currentBriefId = (searchParams.get('briefId') || 'all') as string
 
-  const updateParams = (key: string, value: SortOption | StatusOption | ProjectOption) => {
+  const updateParams = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString())
     params.set(key, value)
     router.push(`?${params.toString()}`)
   }
 
   const clearFilters = () => {
-    router.push('?');
+    router.push('?')
   }
 
-  const hasFilters = currentSort !== 'date_desc' || currentStatus !== 'all' || currentProjectId !== 'all'
+  const hasFilters = currentSort !== 'date_desc' || 
+                    currentStatus !== 'all' || 
+                    currentProjectId !== 'all' || 
+                    currentBriefType !== 'all' ||
+                    currentBriefId !== 'all'
+
+  const filteredBriefs = currentBriefType === 'all' 
+    ? briefs 
+    : briefs.filter(brief => brief.type === currentBriefType)
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <Select
         value={currentSort}
         onValueChange={(value: SortOption) => updateParams('sort', value)}
@@ -106,6 +131,42 @@ export const CampaignFilters = ({ projects }: Props): ReactElement => {
           {projects.map((project) => (
             <SelectItem key={project.id} value={project.id}>
               {project.title}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Select
+        value={currentBriefType}
+        onValueChange={(value: BriefTypeOption) => {
+          updateParams('briefType', value)
+          updateParams('briefId', 'all')
+        }}
+      >
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="All Brief Types" />
+        </SelectTrigger>
+        <SelectContent>
+          {BRIEF_TYPE_OPTIONS.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Select
+        value={currentBriefId}
+        onValueChange={(value) => updateParams('briefId', value)}
+      >
+        <SelectTrigger className="w-[200px]">
+          <SelectValue placeholder="All Briefs" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Briefs</SelectItem>
+          {filteredBriefs.map((brief) => (
+            <SelectItem key={brief.id} value={brief.id}>
+              {brief.title}
             </SelectItem>
           ))}
         </SelectContent>
