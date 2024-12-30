@@ -95,7 +95,7 @@ The application will be available at `http://localhost:3000`.
 
 3. **Upload Content**: Submit files and scripts according to brief specifications.
 
-4. **AI Review Process**: Leverage AI-powered analysis for quick and thorough submission reviews.
+4. **AI Review Process**: Leverage AI-powered analysis for quick and thorough submission reviews. If the script or submission is completely off track, the AI will auto-reject the submission.
 
 5. **Collaborative Feedback**: Provide detailed comments and revision requests on submissions.
 

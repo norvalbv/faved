@@ -65,8 +65,10 @@ export default async function CampaignSubmissionsPage({ params }: Props): Promis
       <div className="grid gap-4">
         {campaignSubmissions.map(submission => {
           const metadata = submission.metadata as SubmissionMetadata
-          const isApproved = metadata?.approved
           const hasFeedback = !!metadata?.feedbackHistory?.length
+          const status = metadata?.status || 'pending'
+          const isApproved = status === 'approved'
+          const isRejected = status === 'rejected'
 
           return (
             <Link key={submission.id} href={`/campaigns/${params.id}/submissions/${submission.id}`}>
@@ -81,9 +83,16 @@ export default async function CampaignSubmissionsPage({ params }: Props): Promis
                         {metadata?.type || submission.type || 'content'}
                       </Badge>
                     </div>
-                    <Badge variant={isApproved ? 'success' : hasFeedback ? 'warning' : 'secondary'}>
-                      {isApproved ? 'Approved' : hasFeedback ? 'Reviewed' : 'Pending'}
-                    </Badge>
+                    <Badge variant={
+                  isApproved ? 'success' : 
+                  isRejected ? 'destructive' : 
+                  hasFeedback ? 'warning' : 
+                  'secondary'
+                }>
+                  {isApproved ? 'Approved' : 
+                   isRejected ? 'Rejected' :
+                   'In Review'}
+                </Badge>
                   </div>
                   <CardDescription className="line-clamp-2">
                     {metadata?.message || submission.content}
@@ -139,4 +148,4 @@ export default async function CampaignSubmissionsPage({ params }: Props): Promis
       )}
     </div>
   )
-} 
+}

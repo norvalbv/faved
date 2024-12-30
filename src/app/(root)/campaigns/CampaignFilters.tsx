@@ -31,15 +31,6 @@ const STATUS_OPTIONS = [
   { value: 'completed' as const, label: 'Completed' },
 ]
 
-const BRIEF_TYPE_OPTIONS = [
-  { value: 'all' as const, label: 'All Brief Types' },
-  { value: 'game_design' as const, label: 'Game Design' },
-  { value: 'visual_creator' as const, label: 'Visual Creator' },
-  { value: 'filmmaking' as const, label: 'Filmmaking' },
-  { value: 'logo_design' as const, label: 'Logo Design' },
-  { value: 'booktuber' as const, label: 'BookTuber' },
-]
-
 interface Props {
   projects: Array<{
     id: string
@@ -79,8 +70,8 @@ export const CampaignFilters = ({ projects, briefs }: Props): ReactElement => {
                     currentBriefId !== 'all'
 
   const filteredBriefs = currentBriefType === 'all' 
-    ? briefs 
-    : briefs.filter(brief => brief.type === currentBriefType)
+    ? Array.from(new Map(briefs.map(brief => [brief.title, brief])).values())
+    : Array.from(new Map(briefs.filter(brief => brief.type === currentBriefType).map(brief => [brief.title, brief])).values())
 
   return (
     <div className="flex flex-wrap items-center gap-2">
