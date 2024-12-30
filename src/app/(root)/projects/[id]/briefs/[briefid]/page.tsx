@@ -1,12 +1,11 @@
-import { ReactElement } from 'react'
-import { notFound } from 'next/navigation'
 import { BriefRepository } from '@/lib/data-store/repositories/brief'
 import type { BriefMetadata } from '@/lib/types/brief'
 import { Badge } from '@/src/components/ui/badge'
 import { Card, CardContent } from '@/src/components/ui/card'
 import { Separator } from '@/src/components/ui/separator'
-import { FileText, Clock, CheckCircle, Target, Link as LinkIcon } from 'lucide-react'
-import Link from 'next/link'
+import { CheckCircle, Clock, FileText, Link as LinkIcon, Target } from 'lucide-react'
+import { notFound } from 'next/navigation'
+import { ReactElement } from 'react'
 
 interface Props {
   params: {
@@ -69,7 +68,7 @@ export default async function BriefDetailPage({ params }: Props): Promise<ReactE
                       <Target className="h-5 w-5 text-primary" />
                       <h2 className="text-xl font-semibold">Overview</h2>
                     </div>
-                    <Separator />
+                    <Separator className="my-4" />
                     <div className="space-y-6">
                       {typeof metadata.overview === 'string' ? (
                         <p className="text-muted-foreground">{metadata.overview}</p>
@@ -100,7 +99,7 @@ export default async function BriefDetailPage({ params }: Props): Promise<ReactE
                       <CheckCircle className="h-5 w-5 text-primary" />
                       <h2 className="text-xl font-semibold">Guidelines</h2>
                     </div>
-                    <Separator />
+                    <Separator className="my-4" />
                     <div className="space-y-8">
                       {metadata.guidelines.map((section, sectionIndex) => {
                         const items = Array.isArray(section) ? section : section.items
@@ -130,7 +129,7 @@ export default async function BriefDetailPage({ params }: Props): Promise<ReactE
                       <LinkIcon className="h-5 w-5 text-primary" />
                       <h2 className="text-xl font-semibold">Examples</h2>
                     </div>
-                    <Separator />
+                    <Separator className="my-4" />
                     <div className="grid gap-3">
                       {metadata.examples.map((example, index) => (
                         <a
@@ -166,7 +165,7 @@ export default async function BriefDetailPage({ params }: Props): Promise<ReactE
                          metadata.suggestions?.title}
                       </h2>
                     </div>
-                    <Separator />
+                    <Separator className="my-4" />
                     {renderListItems(
                       metadata.productionTools?.items || 
                       metadata.designProcess?.items || 
@@ -189,7 +188,7 @@ export default async function BriefDetailPage({ params }: Props): Promise<ReactE
                       <Clock className="h-5 w-5 text-primary" />
                       <h2 className="text-xl font-semibold">Timeline</h2>
                     </div>
-                    <Separator />
+                    <Separator className="my-4" />
                     <div className="relative space-y-6 before:absolute before:left-4 before:top-2 before:h-[calc(100%-2rem)] before:w-px before:bg-border">
                       {metadata.collaborationTimeline.map((item, index) => (
                         <div key={index} className="relative grid gap-2 pl-12">
