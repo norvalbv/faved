@@ -36,6 +36,9 @@ const mapSubmissionType = (type: string): 'video_topic' | 'draft_script' | 'draf
   }
 }
 
+// Map all campaign IDs to our visual creator brief
+const BRIEF_ID = 'visual-creator-brief-1'
+
 export async function importActivities(fileContent: string) {
   try {
     // Only allow brand users to import data
@@ -57,51 +60,43 @@ export async function importActivities(fileContent: string) {
     // Process records chronologically
     records.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
 
-    // Keep track of processed briefs to avoid duplicate checks
-    const processedBriefs = new Set<string>()
+    // Keep track of processed records
     const skippedRecords: ActivityRecord[] = []
     const successfulRecords: ActivityRecord[] = []
 
+    // Verify brief exists
+    const brief = await BriefRepository.getById(BRIEF_ID)
+    if (!brief) {
+      throw new Error('Visual creator brief not found')
+    }
+
     for (const record of records) {
       try {
-        // Skip if no campaignId
-        if (!record.campaignId) {
-          console.warn('Skipping record without campaignId:', record)
+        // Skip if no input
+        if (!record.input) {
+          console.warn('Skipping record without input:', record)
           skippedRecords.push(record)
           continue
         }
 
-        // Check if brief exists (only once per campaignId)
-        if (!processedBriefs.has(record.campaignId)) {
-          const brief = await BriefRepository.getById(record.campaignId)
-          if (!brief) {
-            console.warn(`Brief not found for campaignId: ${record.campaignId}`)
-            skippedRecords.push(record)
-            continue
-          }
-          processedBriefs.add(record.campaignId)
-        }
-
         // Create submission
-        if (record.input) {
-          const submission = await SubmissionRepository.create({
-            briefId: record.campaignId,
-            type: mapSubmissionType(record.type),
-            content: record.input,
-            status: record.approved === 'true' ? 'approved' : 'pending'
+        const submission = await SubmissionRepository.create({
+          briefId: BRIEF_ID,
+          type: mapSubmissionType(record.type),
+          content: record.input,
+          status: record.approved === 'true' ? 'approved' : 'pending'
+        })
+
+        // Create feedback if exists
+        if (record.feedback && submission) {
+          await FeedbackRepository.create({
+            submissionId: submission.id,
+            type: record.approved === 'true' ? 'approval' : 'suggestion',
+            content: record.feedback
           })
-
-          // Create feedback if exists
-          if (record.feedback && submission) {
-            await FeedbackRepository.create({
-              submissionId: submission.id,
-              type: record.approved === 'true' ? 'approval' : 'suggestion',
-              content: record.feedback
-            })
-          }
-
-          successfulRecords.push(record)
         }
+
+        successfulRecords.push(record)
       } catch (error) {
         console.error('Error processing record:', error)
         skippedRecords.push(record)

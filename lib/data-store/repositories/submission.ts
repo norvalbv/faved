@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { drizzleDb } from '../index'
+import { drizzleDb } from '..'
 import { submissions } from '../schema'
 import { nanoid } from 'nanoid'
 
@@ -10,45 +10,50 @@ export class SubmissionRepository {
     content: string
     status?: 'pending' | 'approved' | 'rejected'
   }) {
+    const id = nanoid()
     const now = new Date()
-    return drizzleDb.insert(submissions).values({
-      id: nanoid(),
+    
+    await drizzleDb.insert(submissions).values({
+      id,
       ...data,
       status: data.status || 'pending',
       createdAt: now,
       updatedAt: now,
-    })
+    }).execute()
+
+    return { id, ...data, createdAt: now, updatedAt: now }
   }
 
   static async getById(id: string) {
-    const results = await drizzleDb
+    const [result] = await drizzleDb
       .select()
       .from(submissions)
       .where(eq(submissions.id, id))
       .limit(1)
-    return results[0]
+      .execute()
+    return result
   }
 
   static async list(briefId?: string) {
-    let query = drizzleDb
-      .select()
-      .from(submissions)
-      .orderBy(submissions.createdAt)
+    const query = drizzleDb.select().from(submissions)
     
     if (briefId) {
-      query = query.where(eq(submissions.briefId, briefId))
+      return query.where(eq(submissions.briefId, briefId)).execute()
     }
 
-    return query
+    return query.execute()
   }
 
   static async updateStatus(id: string, status: 'pending' | 'approved' | 'rejected') {
-    return drizzleDb
+    await drizzleDb
       .update(submissions)
       .set({ 
         status,
         updatedAt: new Date()
       })
       .where(eq(submissions.id, id))
+      .execute()
+    
+    return this.getById(id)
   }
 } 

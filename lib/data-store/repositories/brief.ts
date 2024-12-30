@@ -1,33 +1,32 @@
 import { eq } from 'drizzle-orm'
-import { drizzleDb } from '../index'
+import { drizzleDb } from '..'
 import { briefs } from '../schema'
 import { nanoid } from 'nanoid'
+import type { NewBrief } from '../schema/briefs'
 
 export class BriefRepository {
-  static async create(data: {
-    title: string
-    type: 'game_design' | 'visual_creator' | 'filmmaking' | 'logo_design' | 'booktuber'
-    description: string
-    overview: Record<string, unknown>
-    guidelines: Record<string, unknown>
-    examples?: Record<string, unknown>
-  }) {
+  static async create(data: Omit<NewBrief, 'id' | 'createdAt' | 'updatedAt'>) {
+    const id = nanoid()
     const now = new Date()
-    return drizzleDb.insert(briefs).values({
-      id: nanoid(),
+    
+    await drizzleDb.insert(briefs).values({
+      id,
       ...data,
       createdAt: now,
       updatedAt: now,
-    })
+    }).execute()
+
+    return { id, ...data, createdAt: now, updatedAt: now }
   }
 
   static async getById(id: string) {
-    const results = await drizzleDb
+    const [result] = await drizzleDb
       .select()
       .from(briefs)
       .where(eq(briefs.id, id))
       .limit(1)
-    return results[0]
+      .execute()
+    return result
   }
 
   static async list() {
@@ -35,5 +34,6 @@ export class BriefRepository {
       .select()
       .from(briefs)
       .orderBy(briefs.createdAt)
+      .execute()
   }
 } 
