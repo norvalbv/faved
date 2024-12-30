@@ -6,10 +6,14 @@ export interface SubmissionMetadata {
   campaignId?: string
   approved?: boolean
   status?: 'pending' | 'approved' | 'rejected'
+  input?: string
+  userId?: string
+  submitted?: boolean
   feedbackHistory: Array<{
     feedback: string
     createdAt: string
     status: 'comment' | 'changes_requested' | 'approved' | 'rejected'
+    isAiFeedback?: boolean
   }>
 }
 

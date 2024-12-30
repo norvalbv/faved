@@ -2,9 +2,12 @@
 
 import { SubmissionRepository } from '../data-store/repositories/submission'
 import { CampaignRepository } from '../data-store/repositories/campaign'
+import { BriefRepository } from '../data-store/repositories/brief'
 import { Submission, SubmissionMetadata } from '../types/submission'
+import type { BriefMetadata } from '../types/brief'
 import { auth } from '../utils/auth'
 import { nanoid } from 'nanoid'
+import { analyzeSubmission } from '../services/ai'
 
 export async function getSubmission(id: string) {
   try {
@@ -73,7 +76,30 @@ export async function createSubmission(data: {
       throw new Error('Unauthorized')
     }
 
-    // 2. Find or create campaign
+    // 2. Get brief details for AI analysis
+    const brief = await BriefRepository.getById(data.briefId)
+    if (!brief) {
+      throw new Error('Brief not found')
+    }
+
+    // Cast brief to correct type
+    const briefWithMetadata = {
+      ...brief,
+      metadata: brief.metadata as BriefMetadata
+    }
+
+    // 3. Get AI feedback
+    console.log('Getting AI feedback...')
+    const aiFeedback = await analyzeSubmission({ content: data.content }, briefWithMetadata)
+    console.log('AI Feedback received:', aiFeedback)
+
+    // Check if AI rejected the submission
+    const isRejected = aiFeedback.includes('{{reject}}')
+    const feedbackText = isRejected 
+      ? aiFeedback.split('REASON:')[1]?.trim() 
+      : aiFeedback
+
+    // 4. Find or create campaign
     const campaign = await CampaignRepository.findByBriefId(data.briefId)
     let campaignId: string
 
@@ -95,18 +121,44 @@ export async function createSubmission(data: {
       campaignId = newCampaign.id
     }
 
-    // 3. Create submission
-    await SubmissionRepository.create({
-      campaignId,
-      type: 'submission',
-      content: data.content,
-      metadata: {
-        ...data.metadata,
-        userId
-      }
-    })
+    // 5. Create submission with AI feedback
+    const feedbackHistory = [{
+      feedback: feedbackText,
+      createdAt: new Date().toISOString(),
+      status: isRejected ? 'rejected' : 'comment',
+      isAiFeedback: true
+    }]
 
-    return { success: true, campaignId }
+    console.log('Feedback history:', feedbackHistory)
+
+    const submissionMetadata = {
+      type: data.metadata.type,
+      input: data.metadata.input,
+      sender: data.metadata.sender,
+      userId,
+      message: data.metadata.message,
+      stageId: isRejected ? '3' : '1', // Set to stage 3 if rejected
+      status: isRejected ? 'rejected' : 'pending',
+      submitted: true,
+      feedbackHistory
+    }
+
+    console.log('Final metadata before creation:', submissionMetadata)
+
+    try {
+      await SubmissionRepository.create({
+        campaignId,
+        type: 'submission',
+        content: data.content,
+        metadata: submissionMetadata
+      })
+
+      console.log('Submission created successfully')
+      return { success: true, campaignId }
+    } catch (error) {
+      console.error('Error in final submission creation:', error)
+      throw error
+    }
   } catch (error) {
     console.error('Error creating submission:', error)
     return { success: false, error: 'Failed to create submission' }

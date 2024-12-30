@@ -6,16 +6,9 @@ import { Badge } from '@/src/components/ui/badge'
 import { Button } from '@/src/components/ui/button'
 import { Textarea } from '@/src/components/ui/textarea'
 import { formatDistanceToNow } from 'date-fns'
-import { FileText, MessageCircle, Send, XCircle } from 'lucide-react'
+import { FileText, MessageCircle, Send, XCircle, Bot, CheckCircle, AlertTriangle } from 'lucide-react'
 import type { Submission, SubmissionMetadata } from '@/lib/types/submission'
-import { Separator } from '../ui/separator'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select"
+import { cn } from '@/lib/utils'
 
 interface Props {
   submissions: Submission[]
@@ -34,6 +27,14 @@ export const SubmissionThread = ({
 }: Props): ReactElement => {
   const [feedback, setFeedback] = useState<string>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({})
+
+  const toggleDescription = (id: string) => {
+    setExpandedDescriptions(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }))
+  }
 
   const handleApprove = async (id: string) => {
     if (!feedback.trim()) return
@@ -88,6 +89,8 @@ export const SubmissionThread = ({
         const hasFeedback = metadata?.feedbackHistory?.length > 0
         const isPending = !isApproved && !isRejected
         const canReopen = isApproved || isRejected
+        const isExpanded = expandedDescriptions[submission.id]
+        const description = metadata?.message || submission.content
 
         return (
           <Card key={submission.id}>
@@ -112,9 +115,22 @@ export const SubmissionThread = ({
                    'In Review'}
                 </Badge>
               </div>
-              <CardDescription className="line-clamp-2">
-                {metadata?.message || submission.content}
-              </CardDescription>
+              <div>
+                <CardDescription className={cn(
+                  "whitespace-pre-wrap transition-all duration-200",
+                  !isExpanded && "line-clamp-2"
+                )}>
+                  {description}
+                </CardDescription>
+                {description.length > 150 && (
+                  <button
+                    onClick={() => toggleDescription(submission.id)}
+                    className="text-xs text-blue-600 hover:text-blue-800 mt-1 font-medium"
+                  >
+                    {isExpanded ? 'Show less' : 'Show more'}
+                  </button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -137,33 +153,46 @@ export const SubmissionThread = ({
                 </time>
               </div>
 
-              {hasFeedback && (
-                <div className="mt-4 space-y-4">
-                  {metadata.feedbackHistory.map((item, index) => (
-                    <div key={index} className="rounded-lg bg-muted p-4">
-                      <div className="mb-2 flex items-center justify-between">
-                        <Badge variant={
-                          item.status === 'approved' ? 'success' : 
-                          item.status === 'changes_requested' ? 'warning' : 
-                          item.status === 'rejected' ? 'destructive' :
-                          'secondary'
-                        }>
-                          {item.status === 'approved' ? 'Approved' :
-                           item.status === 'changes_requested' ? 'Changes Requested' :
-                           item.status === 'rejected' ? 'Rejected' :
-                           'Comment'}
-                        </Badge>
-                        <time className="text-xs text-muted-foreground">
+              {metadata?.feedbackHistory?.map((item, index) => (
+                item.isAiFeedback ? (
+                  <div key={index} className="mb-4">
+                    <div className="bg-gray-50 rounded-lg p-6 space-y-4 shadow-sm border border-gray-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Bot className="w-5 h-5 text-blue-600" />
+                        <span className="font-semibold text-blue-600">AI Analysis</span>
+                        <time className="text-xs text-muted-foreground ml-auto">
                           {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
                         </time>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {item.feedback}
-                      </p>
+                      <div className="prose prose-sm max-w-none">
+                        <div className="text-gray-700 whitespace-pre-wrap">{item.feedback}</div>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ) : (
+                  <div key={index} className="mb-4 rounded-lg bg-muted p-4">
+                    <div className="mb-2 flex items-center justify-between">
+                      <Badge variant={
+                        item.status === 'approved' ? 'success' : 
+                        item.status === 'changes_requested' ? 'warning' : 
+                        item.status === 'rejected' ? 'destructive' :
+                        'secondary'
+                      }>
+                        {item.status === 'approved' ? 'Approved' :
+                         item.status === 'changes_requested' ? 'Changes Requested' :
+                         item.status === 'rejected' ? 'Rejected' :
+                         'Comment'}
+                      </Badge>
+                      <time className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
+                      </time>
+                    </div>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {item.feedback}
+                    </p>
+                  </div>
+                )
+              ))}
 
               {(isPending || canReopen) && (
                 <div className="mt-4 space-y-4">
