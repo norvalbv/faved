@@ -1,41 +1,56 @@
 import { drizzleDb } from '..'
 import { briefs } from '../schema'
-import { VISUAL_CREATOR_BRIEF } from '../constants/briefs'
+import { ALL_BRIEFS } from '../constants/briefs'
 
 async function seed() {
   console.log('🌱 Seeding database...')
 
-  // Insert briefs
-  await drizzleDb.insert(briefs).values({
-    id: VISUAL_CREATOR_BRIEF.id,
-    type: 'video_topic',
-    title: VISUAL_CREATOR_BRIEF.title,
-    description: VISUAL_CREATOR_BRIEF.description,
-    metadata: {
-      overview: VISUAL_CREATOR_BRIEF.overview,
-      guidelines: VISUAL_CREATOR_BRIEF.guidelines,
-      collaborationTimeline: VISUAL_CREATOR_BRIEF.collaborationTimeline,
-      examples: VISUAL_CREATOR_BRIEF.examples,
-    },
-    createdAt: VISUAL_CREATOR_BRIEF.createdAt,
-    updatedAt: VISUAL_CREATOR_BRIEF.updatedAt
-  }).onConflictDoUpdate({
-    target: briefs.id,
-    set: {
-      type: 'video_topic',
-      title: VISUAL_CREATOR_BRIEF.title,
-      description: VISUAL_CREATOR_BRIEF.description,
-      metadata: {
-        overview: VISUAL_CREATOR_BRIEF.overview,
-        guidelines: VISUAL_CREATOR_BRIEF.guidelines,
-        collaborationTimeline: VISUAL_CREATOR_BRIEF.collaborationTimeline,
-        examples: VISUAL_CREATOR_BRIEF.examples,
-      },
-      updatedAt: VISUAL_CREATOR_BRIEF.updatedAt
+  try {
+    // Insert briefs
+    for (const brief of ALL_BRIEFS) {
+      await drizzleDb.insert(briefs).values({
+        id: brief.id,
+        title: brief.title,
+        description: brief.description,
+        type: brief.type,
+        metadata: {
+          overview: brief.overview,
+          guidelines: brief.guidelines,
+          collaborationTimeline: brief.collaborationTimeline,
+          examples: brief.examples,
+          ...(brief.type === 'filmmaking' && { productionTools: brief.productionTools }),
+          ...(brief.type === 'logo_design' && { designProcess: brief.designProcess }),
+          ...(brief.type === 'booktuber' && { writingTools: brief.writingTools }),
+          ...(brief.type === 'game_design' && { suggestions: brief.suggestions }),
+        },
+        createdAt: brief.createdAt,
+        updatedAt: brief.updatedAt
+      }).onConflictDoUpdate({
+        target: briefs.id,
+        set: {
+          title: brief.title,
+          description: brief.description,
+          type: brief.type,
+          metadata: {
+            overview: brief.overview,
+            guidelines: brief.guidelines,
+            collaborationTimeline: brief.collaborationTimeline,
+            examples: brief.examples,
+            ...(brief.type === 'filmmaking' && { productionTools: brief.productionTools }),
+            ...(brief.type === 'logo_design' && { designProcess: brief.designProcess }),
+            ...(brief.type === 'booktuber' && { writingTools: brief.writingTools }),
+            ...(brief.type === 'game_design' && { suggestions: brief.suggestions }),
+          },
+          updatedAt: brief.updatedAt
+        }
+      })
     }
-  })
 
-  console.log('✅ Database seeded!')
+    console.log('✅ Database seeded!')
+  } catch (error) {
+    console.error('❌ Seeding failed:', error)
+    throw error
+  }
 }
 
 seed().catch(console.error) 
