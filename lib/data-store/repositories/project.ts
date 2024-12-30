@@ -4,8 +4,8 @@ import { briefs } from '../schema/briefs'
 import { eq } from 'drizzle-orm'
 import type { Project } from '../schema/projects'
 
-export const ProjectRepository = {
-  async getById(id: string): Promise<Project | null> {
+export class ProjectRepository {
+  static async getById(id: string): Promise<Project | null> {
     const [result] = await drizzleDb
       .select()
       .from(projects)
@@ -14,16 +14,16 @@ export const ProjectRepository = {
       .execute()
     
     return result || null
-  },
+  }
 
-  async list(): Promise<Project[]> {
+  static async list(): Promise<Project[]> {
     return drizzleDb
       .select()
       .from(projects)
       .execute()
-  },
+  }
 
-  async getByBriefId(briefId: string): Promise<Project | null> {
+  static async getByBriefId(briefId: string): Promise<Project | null> {
     const [result] = await drizzleDb
       .select({
         project: projects
@@ -36,4 +36,4 @@ export const ProjectRepository = {
     
     return result?.project || null
   }
-} 
+}

@@ -1,14 +1,13 @@
-import { ReactElement } from 'react'
-import Link from 'next/link'
-import { BriefRepository } from '@/lib/data-store/repositories/brief'
 import { ProjectRepository } from '@/lib/data-store/repositories/project'
 import { SubmissionRepository } from '@/lib/data-store/repositories/submission'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/components/ui/card'
+import type { ProjectMetadata } from '@/lib/types/project'
+import type { SubmissionMetadata } from '@/lib/types/submission'
 import { Badge } from '@/src/components/ui/badge'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/components/ui/card'
 import { formatDistanceToNow } from 'date-fns'
 import { Building2, FileText, MessageCircle } from 'lucide-react'
-import type { SubmissionMetadata } from '@/lib/types/submission'
-import type { ProjectMetadata } from '@/lib/types/project'
+import Link from 'next/link'
+import { ReactElement } from 'react'
 
 export default async function DashboardPage(): Promise<ReactElement> {
   const [projects, recentSubmissions] = await Promise.all([
@@ -112,7 +111,7 @@ export default async function DashboardPage(): Promise<ReactElement> {
           {recentSubmissions.map(submission => {
             const metadata = submission.metadata as SubmissionMetadata
             const isApproved = metadata.approved
-            const hasFeedback = !!metadata.feedback
+            const hasFeedback = !!metadata.feedbackHistory.length
 
             return (
               <Card key={submission.id}>

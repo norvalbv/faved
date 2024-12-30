@@ -136,9 +136,14 @@ export default async function CampaignsPage({ searchParams }: Props): Promise<Re
             <Card className="transition-colors hover:bg-muted/50">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">
-                    {campaign.companyTitle}
-                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-base">
+                      {campaign.companyTitle}
+                    </CardTitle>
+                    <Badge variant="outline" className="text-xs">
+                     Campaign ID: #{campaign.id.slice(0, 8)}
+                    </Badge>
+                  </div>
                   <Badge variant={badgeVariantMap[campaign.status] || 'default'}>
                     {campaign.status}
                   </Badge>

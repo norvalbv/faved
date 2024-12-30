@@ -9,6 +9,8 @@ import { Button } from '@/src/components/ui/button'
 import { formatDistanceToNow } from 'date-fns'
 import { FileText, MessageCircle, Plus } from 'lucide-react'
 import type { SubmissionMetadata } from '@/lib/types/submission'
+import { ProjectRepository } from '@/lib/data-store/repositories/project'
+import { BriefRepository } from '@/lib/data-store/repositories/brief'
 
 interface Props {
   params: {
@@ -17,10 +19,12 @@ interface Props {
 }
 
 export default async function CampaignSubmissionsPage({ params }: Props): Promise<ReactElement> {
-  // Get campaign and its submissions
-  const [campaign, submissions] = await Promise.all([
+  // Get campaign, submissions, and related data
+  const [campaign, submissions, projects, briefs] = await Promise.all([
     CampaignRepository.getById(params.id),
-    SubmissionRepository.list()
+    SubmissionRepository.list(),
+    ProjectRepository.list(),
+    BriefRepository.list()
   ])
 
   if (!campaign) {
@@ -33,13 +37,22 @@ export default async function CampaignSubmissionsPage({ params }: Props): Promis
     return metadata?.campaignId === params.id || submission.campaignId === params.id
   })
 
+  // Get project and brief details
+  const brief = briefs.find(b => b.id === campaign.briefId)
+  const project = projects.find(p => p.id === brief?.projectId)
+
   return (
     <div className="container max-w-4xl py-8">
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="mb-2 text-2xl font-semibold tracking-tight">{campaign.title}</h1>
-            <p className="text-muted-foreground">{campaign.description}</p>
+            <div className="flex items-center gap-2 mb-2">
+              <h1 className="text-2xl font-semibold tracking-tight">{project?.title || 'Unknown Company'}</h1>
+              <Badge variant="outline" className="text-xs">
+                Campaign #{campaign.id.slice(0, 8)}
+              </Badge>
+            </div>
+            <p className="text-muted-foreground">{project?.description || 'Description not available'}</p>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant={campaign.status === 'active' ? 'success' : 'secondary'}>

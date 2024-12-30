@@ -23,23 +23,23 @@ module.exports = {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#007AFF", // Apple Blue
+          DEFAULT: "#FF7A00", // Faved Orange
           foreground: "#FFFFFF",
         },
         secondary: {
-          DEFAULT: "#F5F5F7", // Apple Light Gray
+          DEFAULT: "#F5F5F7",
           foreground: "#1D1D1F",
         },
         destructive: {
-          DEFAULT: "#FF3B30", // Apple Red
+          DEFAULT: "#DC2626", // Red
           foreground: "#FFFFFF",
         },
         muted: {
           DEFAULT: "#F5F5F7",
-          foreground: "#86868B",
+          foreground: "#6B7280",
         },
         accent: {
-          DEFAULT: "#5856D6", // Apple Purple
+          DEFAULT: "#FF7A00", // Faved Orange
           foreground: "#FFFFFF",
         },
         card: {
@@ -53,7 +53,7 @@ module.exports = {
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
+        md: "calc(var(--radius) - 2px)", 
         sm: "calc(var(--radius) - 4px)",
       },
       keyframes: {
@@ -73,4 +73,4 @@ module.exports = {
     },
   },
   plugins: [require("tailwindcss-animate")],
-} 
+}
