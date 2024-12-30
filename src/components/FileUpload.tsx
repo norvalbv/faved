@@ -8,15 +8,30 @@ import { cn } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from './ui/alert'
 
-export const FileUpload = (): ReactElement => {
+interface FileUploadProps {
+  briefId?: string
+  onUploadComplete?: (url: string) => void
+  mode?: 'import' | 'submission'
+  accept?: Record<string, string[]>
+}
+
+export const FileUpload = ({ 
+  briefId, 
+  onUploadComplete,
+  mode = 'submission',
+  accept = {
+    'video/*': ['.mp4', '.mov', '.avi'],
+    'image/*': ['.jpg', '.jpeg', '.png'],
+    'application/pdf': ['.pdf']
+  }
+}: FileUploadProps): ReactElement => {
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<any>(null)
+  const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null)
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: {
-      'text/csv': ['.csv'],
-    },
+    accept: mode === 'import' ? { 'text/csv': ['.csv'] } : accept,
     maxFiles: 1,
     disabled: isUploading,
     onDrop: async (files) => {
@@ -28,13 +43,24 @@ export const FileUpload = (): ReactElement => {
 
       try {
         const file = files[0]
-        const fileContent = await file.text()
-        const importResult = await importSubmissions(fileContent)
         
-        if (importResult.success) {
-          setResult(importResult)
+        if (mode === 'import') {
+          const fileContent = await file.text()
+          const importResult = await importSubmissions(fileContent)
+          
+          if (importResult.success) {
+            setResult(importResult)
+          } else {
+            setError(importResult.error || 'Failed to import file')
+          }
         } else {
-          setError(importResult.error || 'Failed to import file')
+          // TODO: Implement actual file upload logic here
+          // For now, simulating with a fake URL
+          const fakeUrl = `https://storage.example.com/${file.name}`
+          setUploadedFileUrl(fakeUrl)
+          if (onUploadComplete) {
+            onUploadComplete(fakeUrl)
+          }
         }
       } catch (error) {
         console.error('Error uploading file:', error)
@@ -58,7 +84,16 @@ export const FileUpload = (): ReactElement => {
         <input {...getInputProps()} />
         <div className="space-y-2">
           <p className="text-sm font-medium">
-            {isDragActive ? 'Drop the file here' : 'Drag and drop your CSV file here'}
+            {isDragActive 
+              ? 'Drop the file here' 
+              : mode === 'import' 
+                ? 'Drag and drop your CSV file here'
+                : 'Drag and drop your file here'}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {mode === 'import' 
+              ? 'Accepts CSV files'
+              : 'Accepts video, image, and PDF files'}
           </p>
           <Button type="button" variant="outline" disabled={isUploading}>
             {isUploading ? (
@@ -80,7 +115,7 @@ export const FileUpload = (): ReactElement => {
         </Alert>
       )}
 
-      {result && (
+      {mode === 'import' && result && (
         <Alert variant={result.summary.failed > 0 ? 'warning' : 'success'}>
           <AlertTitle>Import Complete</AlertTitle>
           <AlertDescription>
@@ -88,6 +123,15 @@ export const FileUpload = (): ReactElement => {
             {result.summary.failed > 0 && (
               <> Failed to import {result.summary.failed} submissions.</>
             )}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {mode === 'submission' && uploadedFileUrl && (
+        <Alert>
+          <AlertTitle>Upload Complete</AlertTitle>
+          <AlertDescription>
+            Your file has been uploaded successfully.
           </AlertDescription>
         </Alert>
       )}

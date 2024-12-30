@@ -10,7 +10,7 @@ interface BriefCardProps {
     title: string
     description: string
     type: string
-    projectId: string | null
+    projectId?: string | null
     createdAt: Date
   }
 }

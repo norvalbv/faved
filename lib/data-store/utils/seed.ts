@@ -42,16 +42,7 @@ async function seed() {
         title: brief.title,
         description: brief.description,
         type: brief.type,
-        metadata: {
-          overview: brief.overview,
-          guidelines: brief.guidelines,
-          collaborationTimeline: brief.collaborationTimeline,
-          examples: brief.examples,
-          ...(brief.type === 'filmmaking' && { productionTools: brief.productionTools }),
-          ...(brief.type === 'logo_design' && { designProcess: brief.designProcess }),
-          ...(brief.type === 'booktuber' && { writingTools: brief.writingTools }),
-          ...(brief.type === 'game_design' && { suggestions: brief.suggestions }),
-        },
+        metadata: brief.metadata,
         createdAt: brief.createdAt,
         updatedAt: brief.updatedAt
       }).onConflictDoUpdate({
@@ -61,16 +52,7 @@ async function seed() {
           title: brief.title,
           description: brief.description,
           type: brief.type,
-          metadata: {
-            overview: brief.overview,
-            guidelines: brief.guidelines,
-            collaborationTimeline: brief.collaborationTimeline,
-            examples: brief.examples,
-            ...(brief.type === 'filmmaking' && { productionTools: brief.productionTools }),
-            ...(brief.type === 'logo_design' && { designProcess: brief.designProcess }),
-            ...(brief.type === 'booktuber' && { writingTools: brief.writingTools }),
-            ...(brief.type === 'game_design' && { suggestions: brief.suggestions }),
-          },
+          metadata: brief.metadata,
           updatedAt: brief.updatedAt
         }
       })
