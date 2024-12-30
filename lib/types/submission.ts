@@ -1,9 +1,9 @@
 export interface SubmissionMetadata {
   id: string
   createdAt: string
-  campaignId?: string
+  campaignId: string
   offerId?: string
-  sender?: string
+  sender: string
   message?: string
   type?: string
   userId?: string
@@ -19,10 +19,9 @@ export interface SubmissionMetadata {
 
 export interface Submission {
   id: string
-  briefId: string
-  type: 'submission'
+  campaignId?: string
+  type: string
   content: string
-  status: 'pending' | 'approved' | 'rejected'
   metadata?: SubmissionMetadata
   createdAt: Date
   updatedAt: Date
