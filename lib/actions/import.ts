@@ -4,118 +4,125 @@ import { parse } from 'csv-parse'
 import { requireAuth } from '../utils/auth'
 import { SubmissionRepository } from '../data-store/repositories/submission'
 import { FeedbackRepository } from '../data-store/repositories/feedback'
+import { BriefRepository } from '../data-store/repositories/brief'
 
 interface ActivityRecord {
-  input: string
-  feedback: string
+  id: string
+  createdAt: string
+  campaignId: string
+  offerId: string
+  sender: string
   message: string
-  brief_id: string
-  influencer_id: string
-  timestamp: string
+  type: string
+  userId: string
+  stageId: string
+  input: string
+  dateInput: string
+  attachments: string
+  submitted: string
+  approved: string
+  feedback: string
+  feedbackAttachments: string
+}
+
+const mapSubmissionType = (type: string): 'video_topic' | 'draft_script' | 'draft_video' | 'live_video' => {
+  switch (type) {
+    case 'draft_script':
+    case 'draft_video':
+    case 'live_video':
+      return type
+    default:
+      return 'video_topic'
+  }
 }
 
 export async function importActivities(fileContent: string) {
-  // Only allow brand users to import data
-  await requireAuth('brand')
+  try {
+    // Only allow brand users to import data
+    await requireAuth('brand')
 
-  const records: ActivityRecord[] = []
-  
-  // Parse CSV content
-  const parser = parse(fileContent, {
-    columns: true,
-    skip_empty_lines: true,
-  })
+    const records: ActivityRecord[] = []
+    
+    // Parse CSV content
+    const parser = parse(fileContent, {
+      columns: true,
+      skip_empty_lines: true,
+    })
 
-  // Process each record
-  for await (const record of parser) {
-    records.push(record)
-  }
-
-  // Process records chronologically
-  records.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-
-  for (const record of records) {
-    // Skip if no brief_id
-    if (!record.brief_id) {
-      console.warn('Skipping record without brief_id:', record)
-      continue
+    // Process each record
+    for await (const record of parser) {
+      records.push(record)
     }
 
-    if (record.message.toLowerCase().includes('submitted')) {
-      // Create submission
-      await SubmissionRepository.create({
-        briefId: record.brief_id,
-        type: 'draft_script', // Default to draft_script for now
-        content: record.input || 'No content provided',
-        status: 'pending'
-      })
-    } 
-    else if (record.message.toLowerCase().includes('feedback') && record.feedback) {
-      // Find the latest submission for this brief
-      const submissions = await SubmissionRepository.list(record.brief_id)
-      const latestSubmission = submissions[0] // list() returns ordered by createdAt desc
+    // Process records chronologically
+    records.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
 
-      if (latestSubmission) {
-        // Create feedback
-        await FeedbackRepository.create({
-          submissionId: latestSubmission.id,
-          type: 'suggestion',
-          content: record.feedback
-        })
-      }
-    }
-    else if (record.message.toLowerCase().includes('approved')) {
-      // Find the latest submission for this brief
-      const submissions = await SubmissionRepository.list(record.brief_id)
-      const latestSubmission = submissions[0]
+    // Keep track of processed briefs to avoid duplicate checks
+    const processedBriefs = new Set<string>()
+    const skippedRecords: ActivityRecord[] = []
+    const successfulRecords: ActivityRecord[] = []
 
-      if (latestSubmission) {
-        await SubmissionRepository.updateStatus(latestSubmission.id, 'approved')
-      }
-    }
-    else if (record.message.toLowerCase().includes('rejected')) {
-      // Find the latest submission for this brief
-      const submissions = await SubmissionRepository.list(record.brief_id)
-      const latestSubmission = submissions[0]
-
-      if (latestSubmission) {
-        await SubmissionRepository.updateStatus(latestSubmission.id, 'rejected')
-
-        // Create a "fake" original submission based on feedback
-        if (record.feedback) {
-          await SubmissionRepository.create({
-            briefId: record.brief_id,
-            type: 'draft_script',
-            content: generateRejectedContent(record.input || '', record.feedback),
-            status: 'rejected'
-          })
+    for (const record of records) {
+      try {
+        // Skip if no campaignId
+        if (!record.campaignId) {
+          console.warn('Skipping record without campaignId:', record)
+          skippedRecords.push(record)
+          continue
         }
+
+        // Check if brief exists (only once per campaignId)
+        if (!processedBriefs.has(record.campaignId)) {
+          const brief = await BriefRepository.getById(record.campaignId)
+          if (!brief) {
+            console.warn(`Brief not found for campaignId: ${record.campaignId}`)
+            skippedRecords.push(record)
+            continue
+          }
+          processedBriefs.add(record.campaignId)
+        }
+
+        // Create submission
+        if (record.input) {
+          const submission = await SubmissionRepository.create({
+            briefId: record.campaignId,
+            type: mapSubmissionType(record.type),
+            content: record.input,
+            status: record.approved === 'true' ? 'approved' : 'pending'
+          })
+
+          // Create feedback if exists
+          if (record.feedback && submission) {
+            await FeedbackRepository.create({
+              submissionId: submission.id,
+              type: record.approved === 'true' ? 'approval' : 'suggestion',
+              content: record.feedback
+            })
+          }
+
+          successfulRecords.push(record)
+        }
+      } catch (error) {
+        console.error('Error processing record:', error)
+        skippedRecords.push(record)
       }
     }
+
+    if (skippedRecords.length > 0) {
+      console.warn(`Skipped ${skippedRecords.length} records:`, skippedRecords)
+    }
+
+    return { 
+      success: true,
+      processed: successfulRecords.length,
+      skipped: skippedRecords.length,
+      details: {
+        successful: successfulRecords,
+        skipped: skippedRecords
+      }
+    }
+  } catch (error) {
+    console.error('Import failed:', error)
+    throw error
   }
-
-  return { success: true }
-}
-
-function generateRejectedContent(approvedContent: string, feedback: string): string {
-  // TODO: Implement more sophisticated content generation
-  // For now, we'll just make some basic modifications based on the feedback
-  let rejectedContent = approvedContent
-
-  // Remove key points mentioned in feedback
-  const keyPoints = extractKeyPoints(feedback)
-  for (const point of keyPoints) {
-    rejectedContent = rejectedContent.replace(point, '')
-  }
-
-  return rejectedContent || 'No content provided'
-}
-
-function extractKeyPoints(feedback: string): string[] {
-  // TODO: Implement more sophisticated key point extraction
-  // For now, we'll just split on common markers
-  return feedback
-    .split(/[.,;]/)
-    .map(point => point.trim())
-    .filter(point => point.length > 10) // Only keep substantial points
 } 

@@ -12,7 +12,6 @@ interface FeedbackSectionProps {
 export const FeedbackSection = ({ submissionId, feedback }: FeedbackSectionProps): React.ReactElement => {
   const handleSubmitFeedback = async (data: Omit<SubmissionFeedback, "id" | "createdAt" | "reviewerId">) => {
     // In a real app, this would make an API call
-    console.log("Submitting feedback:", data)
   }
 
   return (
