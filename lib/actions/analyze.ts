@@ -5,6 +5,8 @@ import { SubmissionRepository } from '../data-store/repositories/submission'
 import { BriefRepository } from '../data-store/repositories/brief'
 import { auth } from '../utils/auth'
 
+export { analyzeSubmission } from '../services/ai'
+
 export async function analyze(submissionId: string) {
   try {
     // 1. Verify user is logged in
