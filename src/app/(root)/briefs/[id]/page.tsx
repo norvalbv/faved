@@ -1,7 +1,7 @@
 import { ReactElement } from "react"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { ALL_BRIEFS } from "@/src/constants/briefs"
+import { ALL_BRIEFS } from "@/lib/data-store/constants/briefs"
 import { BriefDetails } from "@/src/components/briefs/brief-details"
 import { BriefSubmissionSection } from "@/src/components/submissions/brief-submission-section"
 import { Brief } from "@/src/types/brief"

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
 import { cn } from "@/lib/utils"
-import { GAME_DESIGN_BRIEF } from "@/src/constants/briefs"
+import { GAME_DESIGN_BRIEF } from "@/lib/data-store/constants/briefs"
 import { FeedbackSection } from "@/src/components/submissions/feedback-section"
 import type { SubmissionFeedback } from "@/src/types/submission"
 

@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { GAME_DESIGN_BRIEF } from "@/src/constants/briefs"
+import { GAME_DESIGN_BRIEF } from "@/lib/data-store/constants/briefs"
 import { FilteredSubmissions } from "@/src/components/submissions/filtered-submissions"
 import type { Submission } from "@/src/types/submission"
 

@@ -35,12 +35,18 @@ export async function importActivities(fileContent: string) {
   records.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
 
   for (const record of records) {
+    // Skip if no brief_id
+    if (!record.brief_id) {
+      console.warn('Skipping record without brief_id:', record)
+      continue
+    }
+
     if (record.message.toLowerCase().includes('submitted')) {
       // Create submission
       await SubmissionRepository.create({
         briefId: record.brief_id,
         type: 'draft_script', // Default to draft_script for now
-        content: record.input,
+        content: record.input || 'No content provided',
         status: 'pending'
       })
     } 
@@ -80,7 +86,7 @@ export async function importActivities(fileContent: string) {
           await SubmissionRepository.create({
             briefId: record.brief_id,
             type: 'draft_script',
-            content: generateRejectedContent(record.input, record.feedback),
+            content: generateRejectedContent(record.input || '', record.feedback),
             status: 'rejected'
           })
         }
@@ -102,7 +108,7 @@ function generateRejectedContent(approvedContent: string, feedback: string): str
     rejectedContent = rejectedContent.replace(point, '')
   }
 
-  return rejectedContent
+  return rejectedContent || 'No content provided'
 }
 
 function extractKeyPoints(feedback: string): string[] {

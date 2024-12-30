@@ -1,5 +1,5 @@
 import { ReactElement } from "react"
-import { ALL_BRIEFS } from "@/src/constants/briefs"
+import { ALL_BRIEFS } from "@/lib/data-store/constants/briefs"
 import { BriefCard } from "@/src/components/dashboard/brief-card"
 import { Brief } from "@/src/types/brief"
 

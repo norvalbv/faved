@@ -1,58 +1,47 @@
-import { db } from '../index'
+import { drizzleDb } from '..'
 import { briefs } from '../schema'
+import { ALL_BRIEFS } from '../constants/briefs'
 
 async function seed() {
-  try {
-    const now = new Date()
-    // Insert sample briefs
-    await db.insert(briefs).values([
-      {
-        id: 'game-design',
-        title: 'Game Design Brief',
-        type: 'game_design',
-        description: 'Create engaging game design content',
-        overview: JSON.stringify({
-          title: 'Game Design Brief Overview',
-          description: 'Create engaging content about game design principles'
-        }),
-        guidelines: JSON.stringify([
-          'Focus on core game mechanics',
-          'Explain design decisions clearly'
-        ]),
-        examples: JSON.stringify([
-          'Game mechanic analysis videos',
-          'Design process breakdowns'
-        ]),
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        id: 'filmmaking',
-        title: 'Filmmaking Brief',
-        type: 'filmmaking',
-        description: 'Create compelling video content',
-        overview: JSON.stringify({
-          title: 'Filmmaking Brief Overview',
-          description: 'Create engaging content about filmmaking techniques'
-        }),
-        guidelines: JSON.stringify([
-          'Focus on cinematography techniques',
-          'Explain storytelling through visuals'
-        ]),
-        examples: JSON.stringify([
-          'Camera movement tutorials',
-          'Lighting setup guides'
-        ]),
-        createdAt: now,
-        updatedAt: now
+  console.log('🌱 Seeding database...')
+
+  // Insert briefs
+  for (const brief of ALL_BRIEFS) {
+    await drizzleDb.insert(briefs).values({
+      id: brief.id,
+      type: brief.type,
+      title: brief.title,
+      description: brief.description,
+      overview: brief.overview,
+      guidelines: brief.guidelines,
+      collaborationTimeline: brief.collaborationTimeline,
+      examples: brief.examples,
+      suggestions: 'suggestions' in brief ? brief.suggestions : null,
+      productionTools: 'productionTools' in brief ? brief.productionTools : null,
+      designProcess: 'designProcess' in brief ? brief.designProcess : null,
+      writingTools: 'writingTools' in brief ? brief.writingTools : null,
+      createdAt: brief.createdAt,
+      updatedAt: brief.updatedAt
+    }).onConflictDoUpdate({
+      target: briefs.id,
+      set: {
+        type: brief.type,
+        title: brief.title,
+        description: brief.description,
+        overview: brief.overview,
+        guidelines: brief.guidelines,
+        collaborationTimeline: brief.collaborationTimeline,
+        examples: brief.examples,
+        suggestions: 'suggestions' in brief ? brief.suggestions : null,
+        productionTools: 'productionTools' in brief ? brief.productionTools : null,
+        designProcess: 'designProcess' in brief ? brief.designProcess : null,
+        writingTools: 'writingTools' in brief ? brief.writingTools : null,
+        updatedAt: brief.updatedAt
       }
-    ])
-    
-    console.log('Database seeded successfully')
-  } catch (error) {
-    console.error('Seeding failed:', error)
-    process.exit(1)
+    })
   }
+
+  console.log('✅ Database seeded!')
 }
 
-seed() 
+seed().catch(console.error) 
