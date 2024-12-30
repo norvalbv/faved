@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import type { SubmissionType, SubmissionStatus } from "@/types/submission"
+import type { SubmissionType, SubmissionStatus } from "@/lib/types/submission"
 
 interface SubmissionFilters {
   type?: SubmissionType
