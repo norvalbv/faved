@@ -1,5 +1,4 @@
 import { eq } from 'drizzle-orm'
-import { drizzleDb } from '../index'
 import { feedback } from '../schema'
 import { nanoid } from 'nanoid'
 

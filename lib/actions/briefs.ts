@@ -1,7 +1,7 @@
 'use server'
 
 import { auth } from '../utils/auth'
-import { BriefRepository } from '../../../data-store/repositories/brief'
+import { BriefRepository } from '../data-store/repositories/brief'
 
 export async function getBrief(id: string) {
   try {

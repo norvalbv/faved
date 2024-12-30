@@ -2,8 +2,8 @@
 
 import { parse } from 'csv-parse'
 import { requireAuth } from '../utils/auth'
-import { SubmissionRepository } from '../../../data-store/repositories/submission'
-import { FeedbackRepository } from '../../../data-store/repositories/feedback'
+import { SubmissionRepository } from '../data-store/repositories/submission'
+import { FeedbackRepository } from '../data-store/repositories/feedback'
 
 interface ActivityRecord {
   input: string

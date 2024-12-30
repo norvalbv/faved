@@ -1,7 +1,7 @@
 'use server'
 
 import { auth } from '../utils/auth'
-import { SubmissionRepository } from '../../../data-store/repositories/submission'
+import { SubmissionRepository } from '../data-store/repositories/submission'
 
 export async function getSubmission(id: string) {
   try {

@@ -1,7 +1,7 @@
 'use server'
 
 import { auth } from '../utils/auth'
-import { FeedbackRepository } from '../../../data-store/repositories/feedback'
+import { FeedbackRepository } from '../data-store/repositories/feedback'
 
 export async function createFeedback(data: {
   submissionId: string
