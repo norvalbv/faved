@@ -15,8 +15,8 @@ interface QualityWidgetProps {
   improvements: string[]
 }
 
-const renderMetricCard = (label: string, value: number, max: number, color: string) => (
-  <div className="flex flex-col gap-1.5 p-3 rounded-lg bg-white border border-gray-100 shadow-sm">
+const renderMetricCard = (label: string, value: number, max: number, color: string, key: string) => (
+  <div key={key} className="flex flex-col gap-1.5 p-3 rounded-lg bg-white border border-gray-100 shadow-sm">
     <div className="flex justify-between items-center">
       <span className="text-sm font-medium text-gray-700">{label}</span>
       <span className={cn("text-sm font-semibold", color)}>{value}/{max}</span>
@@ -35,13 +35,14 @@ const renderMetricCard = (label: string, value: number, max: number, color: stri
 export const QualityWidget = ({ metrics, strengths, improvements }: QualityWidgetProps): ReactElement => (
   <div className="space-y-6">
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      {metrics.map((metric, idx) => renderMetricCard(
+      {metrics.map((metric) => renderMetricCard(
         metric.label,
         metric.value,
         metric.max,
         metric.value >= 80 ? "text-green-600" :
         metric.value >= 60 ? "text-amber-600" :
-        "text-red-600"
+        "text-red-600",
+        `metric-${metric.label}`
       ))}
     </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -52,7 +53,7 @@ export const QualityWidget = ({ metrics, strengths, improvements }: QualityWidge
         </div>
         <div className="p-4 space-y-3">
           {strengths.map((line, idx) => (
-            <div key={idx} className="flex items-start gap-3 group">
+            <div key={`strength-${idx}`} className="flex items-start gap-3 group">
               <div className="w-1 h-1 rounded-full mt-2 bg-current opacity-40 group-hover:opacity-100 transition-opacity" />
               <p className="text-sm text-gray-700 leading-relaxed flex-1">{line}</p>
             </div>
@@ -66,7 +67,7 @@ export const QualityWidget = ({ metrics, strengths, improvements }: QualityWidge
         </div>
         <div className="p-4 space-y-3">
           {improvements.map((line, idx) => (
-            <div key={idx} className="flex items-start gap-3 group">
+            <div key={`improvement-${idx}`} className="flex items-start gap-3 group">
               <div className="w-1 h-1 rounded-full mt-2 bg-current opacity-40 group-hover:opacity-100 transition-opacity" />
               <p className="text-sm text-gray-700 leading-relaxed flex-1">{line}</p>
             </div>

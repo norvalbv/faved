@@ -1,7 +1,7 @@
 import { ReactElement } from 'react'
 import { Badge } from '@/src/components/ui/badge'
 import { Bot } from 'lucide-react'
-import { formatTimestamp, parseFeedback } from './utils'
+import { formatTimestamp } from './utils'
 import { QualityWidget } from './quality-widget'
 import { SafetyWidget } from './safety-widget'
 import { AlignmentWidget } from './alignment-widget'
@@ -9,10 +9,34 @@ import { SellingPointsWidget } from './selling-points-widget'
 import type { SubmissionMetadata } from '@/lib/types/submission'
 
 interface FeedbackItem {
-  isAiFeedback: boolean
-  status?: string
-  feedback?: string
-  createdAt?: string
+  feedback: string
+  createdAt: string
+  status: 'comment' | 'approved' | 'rejected' | 'changes_requested'
+  isAiFeedback?: boolean
+  timestamp?: string
+  brandSafety?: {
+    pass: boolean
+    score: number
+    issues: string[]
+    confidence: number
+  }
+  sellingPoints?: {
+    missing: string[]
+    present: string[]
+    effectiveness: number
+  }
+  brandAlignment?: {
+    score: number
+    issues: string[]
+    toneMatch: number
+    confidence: number
+  }
+  contentQuality?: {
+    tone: string[]
+    score: number
+    strengths: string[]
+    improvements: string[]
+  }
 }
 
 interface FeedbackSectionProps {
@@ -20,54 +44,60 @@ interface FeedbackSectionProps {
   metadata: SubmissionMetadata
 }
 
-const renderAIFeedback = (feedback: any) => {
-  if (!feedback) return null
+const renderAIFeedback = (item: FeedbackItem) => {
+  if (!item.contentQuality && !item.brandSafety && !item.brandAlignment && !item.sellingPoints) return null
 
   return (
     <div className="space-y-8">
-      <div>
-        <h4 className="font-medium text-gray-900 mb-4">Content Quality Analysis</h4>
-        <QualityWidget 
-          metrics={[
-            { label: 'Clarity', value: feedback.contentQuality.clarity || 0, max: 100 },
-            { label: 'Engagement', value: feedback.contentQuality.engagement || 0, max: 100 },
-            { label: 'Technical Accuracy', value: feedback.contentQuality.technicalAccuracy || 0, max: 100 }
-          ]}
-          strengths={feedback.contentQuality.strengths || []}
-          improvements={feedback.contentQuality.improvements || []}
-        />
-      </div>
+      {item.contentQuality && (
+        <div>
+          <h4 className="font-medium text-gray-900 mb-4">Content Quality Analysis</h4>
+          <QualityWidget 
+            metrics={[
+              { label: 'Content Quality', value: item.contentQuality.score, max: 100 }
+            ]}
+            strengths={item.contentQuality.strengths}
+            improvements={item.contentQuality.improvements}
+          />
+        </div>
+      )}
 
-      <div>
-        <h4 className="font-medium text-gray-900 mb-4">Brand Safety Analysis</h4>
-        <SafetyWidget 
-          score={feedback.brandSafety.score || 0}
-          confidence={feedback.brandSafety.confidence || 0}
-          issues={feedback.brandSafety.issues || []}
-        />
-      </div>
+      {item.brandSafety && (
+        <div>
+          <h4 className="font-medium text-gray-900 mb-4">Brand Safety Analysis</h4>
+          <SafetyWidget 
+            score={item.brandSafety.score}
+            confidence={item.brandSafety.confidence}
+            issues={item.brandSafety.issues}
+          />
+        </div>
+      )}
 
-      <div>
-        <h4 className="font-medium text-gray-900 mb-4">Brand Alignment</h4>
-        <AlignmentWidget 
-          toneMatch={feedback.brandAlignment.toneMatch || 0}
-          issues={feedback.brandAlignment.issues || []}
-        />
-      </div>
+      {item.brandAlignment && (
+        <div>
+          <h4 className="font-medium text-gray-900 mb-4">Brand Alignment</h4>
+          <AlignmentWidget 
+            toneMatch={item.brandAlignment.toneMatch}
+            issues={item.brandAlignment.issues}
+          />
+        </div>
+      )}
 
-      <div>
-        <h4 className="font-medium text-gray-900 mb-4">Selling Points</h4>
-        <SellingPointsWidget 
-          present={feedback.sellingPoints.present || []}
-          missing={feedback.sellingPoints.missing || []}
-        />
-      </div>
+      {item.sellingPoints && (
+        <div>
+          <h4 className="font-medium text-gray-900 mb-4">Selling Points</h4>
+          <SellingPointsWidget 
+            present={item.sellingPoints.present}
+            missing={item.sellingPoints.missing}
+          />
+        </div>
+      )}
     </div>
   )
 }
 
 export const FeedbackSection = ({ item, metadata }: FeedbackSectionProps): ReactElement => {
-  if (item.isAiFeedback) {
+  if (item.isAiFeedback === true) {
     return (
       <div className="mb-6">
         <div className="bg-white rounded-lg p-6 space-y-6 shadow-sm border border-gray-200">
@@ -83,7 +113,7 @@ export const FeedbackSection = ({ item, metadata }: FeedbackSectionProps): React
               {formatTimestamp(item.createdAt)}
             </time>
           </div>
-          {renderAIFeedback(parseFeedback(item.feedback))}
+          {renderAIFeedback(item)}
         </div>
       </div>
     )

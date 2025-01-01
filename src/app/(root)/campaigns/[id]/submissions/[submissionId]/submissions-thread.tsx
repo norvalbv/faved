@@ -75,6 +75,7 @@ export const SubmissionThread = ({
           submission={submission}
           isSubmitting={isSubmitting}
           feedback={feedback}
+          onFeedbackChange={setFeedback}
           onApprove={handleApprove}
           onRequestChanges={handleRequestChanges}
           onAddFeedback={handleAddFeedback}

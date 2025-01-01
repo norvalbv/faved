@@ -8,6 +8,7 @@ interface SubmissionActionsProps {
   isPending: boolean
   isSubmitting: boolean
   feedback: string
+  onFeedbackChange: (value: string) => void
   onApprove: (id: string) => Promise<void>
   onRequestChanges: (id: string) => Promise<void>
   onAddFeedback: (id: string) => Promise<void>
@@ -19,6 +20,7 @@ export const SubmissionActions = ({
   isPending,
   isSubmitting,
   feedback,
+  onFeedbackChange,
   onApprove,
   onRequestChanges,
   onAddFeedback,
@@ -30,6 +32,7 @@ export const SubmissionActions = ({
         <div className="flex-1">
           <Textarea 
             value={feedback}
+            onChange={(e) => onFeedbackChange(e.target.value)}
             placeholder={!isPending ? "Add feedback to reopen..." : "Add your feedback..."}
             className="min-h-[2.5rem] resize-none border-muted-foreground/20 bg-muted/50"
             rows={3}

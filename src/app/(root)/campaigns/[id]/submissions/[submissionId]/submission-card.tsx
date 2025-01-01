@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src
 import { Badge } from '@/src/components/ui/badge'
 import { FileText, MessageCircle } from 'lucide-react'
 import type { Submission, SubmissionMetadata } from '@/lib/types/submission'
-import { cn } from '@/lib/utils'
 import { formatTimestamp } from './utils'
 import { FeedbackSection } from './feedback-section'
 import { SubmissionActions } from './submission-actions'
@@ -12,6 +11,7 @@ interface SubmissionCardProps {
   submission: Submission
   isSubmitting: boolean
   feedback: string
+  onFeedbackChange: (value: string) => void
   onApprove: (id: string) => Promise<void>
   onRequestChanges: (id: string) => Promise<void>
   onAddFeedback: (id: string) => Promise<void>
@@ -22,6 +22,7 @@ export const SubmissionCard = ({
   submission,
   isSubmitting,
   feedback,
+  onFeedbackChange,
   onApprove,
   onRequestChanges,
   onAddFeedback,
@@ -97,6 +98,7 @@ export const SubmissionCard = ({
             isPending={isPending}
             isSubmitting={isSubmitting}
             feedback={feedback}
+            onFeedbackChange={onFeedbackChange}
             onApprove={onApprove}
             onRequestChanges={onRequestChanges}
             onAddFeedback={onAddFeedback}
