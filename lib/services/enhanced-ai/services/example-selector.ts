@@ -4,6 +4,7 @@ import { eq, desc } from 'drizzle-orm'
 import { CalibrationExample, ExampleSelectionConfig } from '../types'
 import { SimilarityCalculator } from '../utils/similarity'
 import { Submission } from '@/lib/types/submission'
+import { CalibrationData } from '@/lib/data-store/schema/calibration'
 
 export class ExampleSelector {
   private readonly config: ExampleSelectionConfig
@@ -42,21 +43,21 @@ export class ExampleSelector {
     const selectedApproved = this.selectBestExamples(approvedExamples, approvedCount)
     const selectedRejected = this.selectBestExamples(rejectedExamples, rejectedCount)
 
-    return [...selectedApproved, ...selectedRejected].map(this.mapToCalibrationExample)
+    return [...selectedApproved, ...selectedRejected].map(example => this.mapToCalibrationExample(example))
   }
 
-  private filterExamplesByApproval(examples: any[], approved: boolean) {
+  private filterExamplesByApproval(examples: CalibrationData[], approved: boolean): CalibrationData[] {
     return examples.filter(e => {
       const similarity = this.similarityCalculator.calculateSimilarity(e.content, '')
       return e.approved === approved && similarity >= this.config.minSimilarity
     })
   }
 
-  private selectBestExamples(examples: any[], count: number): any[] {
+  private selectBestExamples(examples: CalibrationData[], count: number): CalibrationData[] {
     if (examples.length <= count) return examples
 
     // Ensure we have a diverse set of examples
-    const selected: any[] = []
+    const selected: CalibrationData[] = []
     const contentLengthGroups = this.groupByContentLength(examples)
 
     // Try to get examples from each content length group
@@ -75,9 +76,9 @@ export class ExampleSelector {
     return selected
   }
 
-  private groupByContentLength(examples: any[]): any[][] {
+  private groupByContentLength(examples: CalibrationData[]): CalibrationData[][] {
     // Group into short, medium, and long content
-    const groups: any[][] = [[], [], []]
+    const groups: CalibrationData[][] = [[], [], []]
     examples.forEach(example => {
       const length = example.content.length
       if (length < 100) groups[0].push(example)
@@ -87,7 +88,7 @@ export class ExampleSelector {
     return groups.filter(group => group.length > 0)
   }
 
-  private mapToCalibrationExample(example: any): CalibrationExample {
+  private mapToCalibrationExample(example: CalibrationData): CalibrationExample {
     return {
       content: example.content,
       approved: example.approved,

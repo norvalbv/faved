@@ -2,7 +2,7 @@
 
 import { auth } from '../utils/auth'
 import { BriefRepository } from '../data-store/repositories/brief'
-import type { Brief } from '@/lib/types/brief'
+import type { Brief, BriefMetadata } from '@/lib/types/brief'
 
 export async function getBrief(id: string) {
   try {
@@ -43,21 +43,27 @@ export async function listBriefs() {
 }
 
 function transformBrief(brief: any): Brief {
-  const metadata = brief.metadata as any
+  const metadata = brief.metadata as BriefMetadata
   return {
     id: brief.id,
     type: brief.type,
     title: brief.title,
     description: brief.description,
-    overview: metadata.overview,
-    guidelines: metadata.guidelines,
-    collaborationTimeline: metadata.collaborationTimeline,
-    examples: metadata.examples,
-    ...(brief.type === 'filmmaking' && { productionTools: metadata.productionTools }),
-    ...(brief.type === 'logo_design' && { designProcess: metadata.designProcess }),
-    ...(brief.type === 'booktuber' && { writingTools: metadata.writingTools }),
-    ...(brief.type === 'game_design' && { suggestions: metadata.suggestions }),
+    projectId: brief.projectId,
+    metadata: {
+      overview: metadata.overview,
+      guidelines: metadata.guidelines,
+      collaborationTimeline: metadata.collaborationTimeline,
+      examples: metadata.examples,
+      requirements: metadata.requirements,
+      tone: metadata.tone,
+      keywords: metadata.keywords,
+      ...(brief.type === 'filmmaking' && { productionTools: metadata.productionTools }),
+      ...(brief.type === 'logo_design' && { designProcess: metadata.designProcess }),
+      ...(brief.type === 'booktuber' && { writingTools: metadata.writingTools }),
+      ...(brief.type === 'game_design' && { suggestions: metadata.suggestions })
+    },
     createdAt: brief.createdAt,
     updatedAt: brief.updatedAt
-  } as Brief
-} 
+  }
+}

@@ -1,99 +1,59 @@
 import { ReactElement } from 'react'
 import { Badge } from '@/src/components/ui/badge'
-import { Bot } from 'lucide-react'
+import { Bot, User } from 'lucide-react'
 import { formatTimestamp } from './utils'
+import { SubmissionMetadata } from '@/lib/types/submission'
+import { AnalysisResult } from '@/lib/services/enhanced-ai/types'
 import { QualityWidget } from './quality-widget'
 import { SafetyWidget } from './safety-widget'
 import { AlignmentWidget } from './alignment-widget'
 import { SellingPointsWidget } from './selling-points-widget'
-import type { SubmissionMetadata } from '@/lib/types/submission'
-
-interface FeedbackItem {
-  feedback: string
-  createdAt: string
-  status: 'comment' | 'approved' | 'rejected' | 'changes_requested'
-  isAiFeedback?: boolean
-  timestamp?: string
-  brandSafety?: {
-    pass: boolean
-    score: number
-    issues: string[]
-    confidence: number
-  }
-  sellingPoints?: {
-    missing: string[]
-    present: string[]
-    effectiveness: number
-  }
-  brandAlignment?: {
-    score: number
-    issues: string[]
-    toneMatch: number
-    confidence: number
-  }
-  contentQuality?: {
-    tone: string[]
-    score: number
-    strengths: string[]
-    improvements: string[]
-  }
-}
 
 interface FeedbackSectionProps {
-  item: FeedbackItem
+  item: {
+    feedback: string
+    createdAt: string
+    status: 'comment' | 'changes_requested' | 'approved' | 'rejected'
+    isAiFeedback?: boolean
+    analysis?: AnalysisResult
+    weights?: Record<string, number>
+  }
   metadata: SubmissionMetadata
 }
 
-const transformBrandAlignment = (alignment?: FeedbackItem['brandAlignment']) => {
-  if (!alignment) {
-    return {
-      score: 0,
-      confidence: 0,
-      alignment: [],
-      misalignment: []
-    }
-  }
-  
-  return {
-    score: alignment.score,
-    confidence: alignment.confidence,
-    alignment: [], // No alignment strengths in old data structure
-    misalignment: alignment.issues || []
-  }
-}
-
-const renderAIFeedback = (item: FeedbackItem) => {
-  if (!item.contentQuality && !item.brandSafety && !item.brandAlignment && !item.sellingPoints) return null
+const renderAIFeedback = (analysis: AnalysisResult) => {
+  if (!analysis) return null
 
   return (
     <div className="space-y-8">
-      {item.contentQuality && (
-        <div>
-          <h4 className="font-medium text-gray-900 mb-4">Content Quality Analysis</h4>
-          <QualityWidget contentQuality={item.contentQuality} />
+      {analysis.summary && (
+        <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+          <h4 className="font-medium text-blue-900 mb-2">AI Analysis Summary</h4>
+          <p className="text-sm text-blue-800 whitespace-pre-wrap leading-relaxed">
+            {analysis.summary}
+          </p>
         </div>
       )}
 
-      {item.brandSafety && (
-        <div>
-          <h4 className="font-medium text-gray-900 mb-4">Brand Safety Analysis</h4>
-          <SafetyWidget brandSafety={item.brandSafety} />
-        </div>
-      )}
+      <div>
+        <h4 className="font-medium text-gray-900 mb-4">Content Quality Analysis</h4>
+        <QualityWidget contentQuality={analysis.content.quality} />
+      </div>
 
-      {item.brandAlignment && (
-        <div>
-          <h4 className="font-medium text-gray-900 mb-4">Brand Alignment</h4>
-          <AlignmentWidget brandAlignment={transformBrandAlignment(item.brandAlignment)} />
-        </div>
-      )}
+      <div>
+        <h4 className="font-medium text-gray-900 mb-4">Brand Safety Analysis</h4>
+        <SafetyWidget brandSafety={analysis.brandSafety} />
+      </div>
 
-      {item.sellingPoints && (
-        <div>
-          <h4 className="font-medium text-gray-900 mb-4">Selling Points</h4>
-          <SellingPointsWidget sellingPoints={item.sellingPoints} />
-        </div>
-      )}
+      <div>
+        <h4 className="font-medium text-gray-900 mb-4">Brand Alignment</h4>
+        <AlignmentWidget brandAlignment={analysis.brandAlignment} />
+      </div>
+
+      <div>
+        <h4 className="font-medium text-gray-900 mb-4">Selling Points</h4>
+        <SellingPointsWidget sellingPoints={analysis.content.sellingPoints} />
+      </div>
     </div>
   )
 }
@@ -115,7 +75,7 @@ export const FeedbackSection = ({ item, metadata }: FeedbackSectionProps): React
               {formatTimestamp(item.createdAt)}
             </time>
           </div>
-          {renderAIFeedback(item)}
+          {item.analysis && renderAIFeedback(item.analysis)}
         </div>
       </div>
     )
@@ -125,17 +85,16 @@ export const FeedbackSection = ({ item, metadata }: FeedbackSectionProps): React
     <div className="mb-4 rounded-lg bg-muted p-4">
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{metadata.sender}</span>
+          <User className="h-4 w-4" />
+          <span className="text-sm font-medium">{metadata.sender || 'Anonymous'}</span>
           <Badge variant={
             item.status === 'approved' ? 'success' : 
             item.status === 'changes_requested' ? 'warning' : 
             item.status === 'rejected' ? 'destructive' :
             'secondary'
           }>
-            {item.status === 'approved' ? 'Approved' :
-             item.status === 'changes_requested' ? 'Changes Requested' :
-             item.status === 'rejected' ? 'Rejected' :
-             'Comment'}
+            {item.status === 'changes_requested' ? 'Changes Requested' :
+             item.status.charAt(0).toUpperCase() + item.status.slice(1)}
           </Badge>
         </div>
         <time className="text-xs text-muted-foreground">
@@ -143,7 +102,7 @@ export const FeedbackSection = ({ item, metadata }: FeedbackSectionProps): React
         </time>
       </div>
       <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-        {item.feedback || ''}
+        {item.feedback}
       </p>
     </div>
   )

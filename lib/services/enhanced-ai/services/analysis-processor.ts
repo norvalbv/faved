@@ -1,41 +1,8 @@
-import { AnalysisResult } from '@/lib/types/analysis'
+import { AnalysisResult, DEFAULT_ANALYSIS_RESULT } from '../types'
 import { ImportanceWeights } from '@/lib/types/calibration'
 
-const DEFAULT_ANALYSIS_RESULT: AnalysisResult = {
-  brandSafety: {
-    score: 0,
-    issues: [],
-    confidence: 0,
-  },
-  content: {
-    quality: {
-      score: 0,
-      clarity: 0,
-      engagement: 0,
-      confidence: 0,
-      technicalAccuracy: 0,
-      tone: [],
-      strengths: [],
-      improvements: [],
-    },
-    sellingPoints: {
-      score: 0,
-      confidence: 0,
-      effectiveness: 0,
-      present: [],
-      missing: [],
-    },
-  },
-  brandAlignment: {
-    score: 0,
-    confidence: 0,
-    alignment: [],
-    misalignment: [],
-  },
-}
-
 export class AnalysisProcessor {
-  processAnalysis(rawAnalysis: any): AnalysisResult {
+  processAnalysis(rawAnalysis: Partial<AnalysisResult>): AnalysisResult {
     return {
       ...DEFAULT_ANALYSIS_RESULT,
       ...rawAnalysis,
@@ -98,6 +65,6 @@ export class AnalysisProcessor {
   }
 
   getDefaultResult(): AnalysisResult {
-    return DEFAULT_ANALYSIS_RESULT
+    return { ...DEFAULT_ANALYSIS_RESULT }
   }
 } 

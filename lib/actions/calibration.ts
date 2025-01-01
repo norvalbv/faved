@@ -3,12 +3,14 @@
 import { drizzleDb } from '@/lib/data-store'
 import { calibrationData, calibrationWeights } from '@/lib/data-store/schema'
 import { ImportanceWeights } from '@/lib/types/calibration'
-import { Submission } from '@/lib/types/submission'
-import { Brief, BriefMetadata } from '@/lib/types/brief'
 import { nanoid } from 'nanoid'
-import { eq } from 'drizzle-orm'
-import { aiService } from '@/lib/services/ai'
+import { eq, desc } from 'drizzle-orm'
 import { briefs } from '@/lib/data-store/schema'
+import OpenAI from 'openai'
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+})
 
 interface ImportCalibrationDataResult {
   success: boolean
@@ -18,6 +20,54 @@ interface ImportCalibrationDataResult {
     success: boolean
     error?: string
   }>
+}
+
+async function generateCalibrationSummary(
+  content: string,
+  weights: ImportanceWeights,
+  examples: Array<{ content: string; approved: boolean }>
+): Promise<string> {
+  const approvedExamples = examples.filter(ex => ex.approved).map(ex => ex.content).slice(0, 3)
+  
+  const prompt = `Based on our historical data and importance weights, analyze this content:
+
+Content to analyze:
+${content}
+
+Weight Priorities (ordered by importance):
+${Object.entries(weights)
+  .sort(([, a], [, b]) => b - a)
+  .map(([key, value]) => `- ${key}: ${(value * 100).toFixed(0)}%`)
+  .join('\n')}
+
+Examples of Approved Content:
+${approvedExamples.map((ex, i) => `Example ${i + 1}:\n${ex}`).join('\n\n')}
+
+Provide a concise analysis that:
+1. Explains how well the content aligns with our weight priorities
+2. Compares it to successful examples
+3. Suggests specific improvements
+4. Points out patterns found in successful content
+
+Format your response in a clear, actionable way.`
+
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      {
+        role: 'system',
+        content: 'You are an expert content analyst providing constructive feedback.'
+      },
+      {
+        role: 'user',
+        content: prompt
+      }
+    ],
+    temperature: 0.7,
+    max_tokens: 500
+  })
+
+  return response.choices[0]?.message?.content || 'Unable to generate summary.'
 }
 
 const parseDate = (dateStr: string): Date => {
@@ -253,8 +303,22 @@ export async function importCalibrationData(
 export async function updateCalibrationWeights(
   briefId: string,
   weights: ImportanceWeights
-): Promise<{ success: boolean; message: string }> {
+): Promise<{ success: boolean; message: string; summary?: string }> {
   try {
+    // Get some recent examples for the brief
+    const examples = await drizzleDb.query.calibrationData.findMany({
+      where: eq(calibrationData.briefId, briefId),
+      orderBy: desc(calibrationData.approved),
+      limit: 5
+    })
+
+    // Generate a summary of what these weights mean based on historical data
+    const summary = await generateCalibrationSummary(
+      "Example content for weight analysis",
+      weights,
+      examples
+    )
+
     await drizzleDb.insert(calibrationWeights)
       .values({
         id: nanoid(),
@@ -273,7 +337,8 @@ export async function updateCalibrationWeights(
 
     return {
       success: true,
-      message: 'Successfully updated calibration weights'
+      message: 'Successfully updated calibration weights',
+      summary
     }
   } catch (error) {
     console.error('Error updating calibration weights:', error)
