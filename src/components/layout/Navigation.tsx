@@ -9,6 +9,7 @@ const navItems = [
   { href: '/projects', label: 'Projects' },
   { href: '/campaigns', label: 'Campaigns' },
   { href: '/import', label: 'Import Data' },
+  { href: '/calibration', label: 'Calibration' },
 ]
 
 export function Navigation() {

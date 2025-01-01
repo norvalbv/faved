@@ -6,20 +6,27 @@ import { Cloud, File, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { importSubmissions } from '@/lib/actions/import'
 import { createSubmission } from '@/lib/actions/submissions'
-import { Progress } from './ui/progress'
-import { Button } from './ui/button'
+import { Progress } from '@/src/components/ui/progress'
+import { Button } from '@/src/components/ui/button'
+import { ProcessingResult } from '@/lib/types/calibration'
 
-interface FileUploadProps {
-  mode?: 'import' | 'brief'
-  onUploadComplete?: (campaignId: string) => void
+type FileUploadResult<T> = T extends 'historical'
+  ? string
+  : T extends 'brief'
+    ? { campaignId: string; processingResult: ProcessingResult }
+    : string
+
+interface FileUploadProps<T extends 'import' | 'brief' | 'historical' = 'import'> {
+  mode?: T
+  onUploadComplete?: (result: FileUploadResult<T>) => void
   briefId?: string
 }
 
-export const FileUpload = ({ 
-  mode = 'import',
+export const FileUpload = <T extends 'import' | 'brief' | 'historical' = 'import'>({ 
+  mode = 'import' as T,
   onUploadComplete,
   briefId 
-}: FileUploadProps): ReactElement => {
+}: FileUploadProps<T>): ReactElement => {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
 
@@ -31,7 +38,7 @@ export const FileUpload = ({
       setIsUploading(true)
       setUploadProgress(0)
 
-      if (mode === 'import') {
+      if (mode === 'import' || mode === 'historical') {
         // Handle CSV import
         if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
           toast.error('Please upload a CSV file')
@@ -51,21 +58,27 @@ export const FileUpload = ({
           reader.readAsText(file)
         })
 
-        // Import submissions
-        const result = await importSubmissions(content)
-        
-        if (result.success) {
-          toast.success(result.message)
-          
-          // Show details of any failures
-          const failures = result.details.filter(r => !r.success)
-          if (failures.length > 0) {
-            failures.forEach(failure => {
-              toast.error(`Row ${failure.id}: ${failure.error}`)
-            })
+        if (mode === 'historical') {
+          if (onUploadComplete) {
+            onUploadComplete(content as FileUploadResult<T>)
           }
         } else {
-          toast.error(result.message)
+          // Import submissions
+          const result = await importSubmissions(content)
+          
+          if (result.success) {
+            toast.success(result.message)
+            
+            // Show details of any failures
+            const failures = result.details.filter(r => !r.success)
+            if (failures.length > 0) {
+              failures.forEach(failure => {
+                toast.error(`Row ${failure.id}: ${failure.error}`)
+              })
+            }
+          } else {
+            toast.error(result.message)
+          }
         }
       } else {
         // Create submission with file URL
@@ -87,7 +100,7 @@ export const FileUpload = ({
 
         if (submissionResult.success && submissionResult.campaignId) {
           if (onUploadComplete) {
-            onUploadComplete(submissionResult.campaignId)
+            onUploadComplete(submissionResult.campaignId as FileUploadResult<T>)
           }
           toast.success('File uploaded successfully')
         } else {
@@ -105,7 +118,7 @@ export const FileUpload = ({
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: mode === 'import' 
+    accept: mode === 'import' || mode === 'historical'
       ? { 'text/csv': ['.csv'] }
       : {
           'video/*': ['.mp4', '.mov', '.avi'],
@@ -134,12 +147,12 @@ export const FileUpload = ({
             <p className="text-sm font-medium text-gray-900">
               {isDragActive 
                 ? 'Drop your file here' 
-                : mode === 'import'
+                : mode === 'import' || mode === 'historical'
                   ? 'Drag & drop your CSV file here'
                   : 'Drag & drop your file here'}
             </p>
             <p className="text-xs text-gray-500">
-              {mode === 'import' 
+              {mode === 'import' || mode === 'historical'
                 ? 'CSV files only, up to 10MB'
                 : 'Video, audio, image, or PDF files, up to 100MB'}
             </p>

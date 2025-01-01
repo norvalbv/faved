@@ -1,62 +1,121 @@
-import { Brief as DrizzleBrief } from '../data-store/schema/briefs'
-import { Submission as DrizzleSubmission } from '../data-store/schema/submissions'
-import { BrandAnalyzer } from '../agents/brand/analyzers/brandAnalyzer'
-import { ContentAnalyzer } from '../agents/content/analyzers/contentAnalyzer'
-import { BriefAnalyzer } from '../agents/brief/analyzers/briefAnalyzer'
-import { Submission } from '../types/submission'
-import { Brief, BriefMetadata } from '../types/brief'
+import OpenAI from 'openai'
+import { Brief } from '@/lib/types/brief'
+import { Submission } from '@/lib/types/submission'
+import { AnalysisResult } from '@/lib/types/analysis'
 
-export class AIService {
-  private brandAnalyzer: BrandAnalyzer
-  private contentAnalyzer: ContentAnalyzer
-  private briefAnalyzer: BriefAnalyzer
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+})
 
-  constructor() {
-    const apiKey = process.env.OPENAI_API_KEY!
-    this.brandAnalyzer = new BrandAnalyzer(apiKey)
-    this.contentAnalyzer = new ContentAnalyzer(apiKey)
-    this.briefAnalyzer = new BriefAnalyzer(apiKey)
-  }
-
-  async analyzeSubmission(drizzleSubmission: DrizzleSubmission, drizzleBrief: DrizzleBrief) {
-    // Convert Drizzle submission to analyzer submission type
-    const submission: Submission = {
-      id: drizzleSubmission.id,
-      projectId: drizzleSubmission.projectId || 'milanote_project_001',
-      campaignId: drizzleSubmission.campaignId || undefined,
-      type: drizzleSubmission.type,
-      content: drizzleSubmission.content,
-      metadata: drizzleSubmission.metadata as any,
-      createdAt: drizzleSubmission.createdAt,
-      updatedAt: drizzleSubmission.updatedAt
-    }
-
-    // Convert Drizzle brief to analyzer brief type
-    const brief: Brief = {
-      id: drizzleBrief.id,
-      projectId: drizzleBrief.projectId,
-      title: drizzleBrief.title,
-      description: drizzleBrief.description,
-      type: drizzleBrief.type as Brief['type'],
-      metadata: drizzleBrief.metadata as BriefMetadata,
-      createdAt: drizzleBrief.createdAt,
-      updatedAt: drizzleBrief.updatedAt
-    }
-
-    const [brandResults, contentResults] = await Promise.all([
-      this.brandAnalyzer.analyze(submission, brief),
-      this.contentAnalyzer.analyze(submission, brief)
-    ])
-
-    return {
-      brandSafety: brandResults.safety,
-      brandAlignment: brandResults.alignment,
-      content: contentResults,
-      timestamp: new Date().toISOString()
-    }
-  }
+const DEFAULT_ANALYSIS_RESULT: AnalysisResult = {
+  brandSafety: {
+    score: 0,
+    issues: [],
+    confidence: 0,
+  },
+  content: {
+    quality: {
+      score: 0,
+      clarity: 0,
+      engagement: 0,
+      confidence: 0,
+      technicalAccuracy: 0,
+      tone: [],
+      strengths: [],
+      improvements: [],
+    },
+    sellingPoints: {
+      score: 0,
+      confidence: 0,
+      effectiveness: 0,
+      present: [],
+      missing: [],
+    },
+  },
+  brandAlignment: {
+    score: 0,
+    confidence: 0,
+    alignment: [],
+    misalignment: [],
+  },
 }
 
-// Export singleton instance
-export const aiService = new AIService()
-export const analyzeSubmission = aiService.analyzeSubmission.bind(aiService) 
+export const aiService = {
+  async analyzeSubmission(
+    submission: Submission,
+    brief: Brief
+  ): Promise<AnalysisResult> {
+    try {
+      const briefData = {
+        title: brief.title,
+        description: brief.description,
+        type: brief.type,
+        requirements: brief.metadata?.requirements || [],
+        tone: brief.metadata?.tone || [],
+        keywords: brief.metadata?.keywords || [],
+        guidelines: brief.metadata?.guidelines || {},
+      }
+
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        temperature: 0.2,
+        messages: [
+          {
+            role: 'system',
+            content: `You are an AI content analyzer. Analyze content based on brand guidelines and briefs. Return a JSON response with scores (0-100) and specific feedback.`
+          },
+          {
+            role: 'user',
+            content: `Brief: ${JSON.stringify(briefData)}
+
+Content: ${submission.content}
+
+Return a JSON object with this exact structure:
+{
+  "brandSafety": {
+    "score": number,
+    "issues": string[],
+    "confidence": number
+  },
+  "content": {
+    "quality": {
+      "score": number,
+      "clarity": number,
+      "engagement": number,
+      "confidence": number,
+      "technicalAccuracy": number,
+      "tone": string[],
+      "strengths": string[],
+      "improvements": string[]
+    },
+    "sellingPoints": {
+      "score": number,
+      "confidence": number,
+      "effectiveness": number,
+      "present": string[],
+      "missing": string[]
+    }
+  },
+  "brandAlignment": {
+    "score": number,
+    "confidence": number,
+    "alignment": string[],
+    "misalignment": string[]
+  }
+}`
+          }
+        ],
+        response_format: { type: "json_object" }
+      })
+
+      const analysis = JSON.parse(response.choices[0].message.content || '{}')
+      return {
+        ...DEFAULT_ANALYSIS_RESULT,
+        ...analysis
+      }
+    } catch (error) {
+      console.error('AI analysis failed:', error)
+      return DEFAULT_ANALYSIS_RESULT
+    }
+  }
+} 
