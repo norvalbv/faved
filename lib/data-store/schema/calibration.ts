@@ -1,5 +1,4 @@
-import { pgTable, text, timestamp, jsonb, boolean } from 'drizzle-orm/pg-core'
-import { submissions } from './submissions'
+import { pgTable, text, timestamp, jsonb, boolean, unique } from 'drizzle-orm/pg-core'
 import { briefs } from './briefs'
 
 export const calibrationData = pgTable('calibration_data', {
@@ -24,7 +23,9 @@ export const calibrationWeights = pgTable('calibration_weights', {
   weights: jsonb('weights').notNull().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-})
+}, (table) => ({
+  briefIdUnique: unique('calibration_weights_brief_id_key').on(table.briefId)
+}))
 
 export type CalibrationData = typeof calibrationData.$inferSelect
 export type NewCalibrationData = typeof calibrationData.$inferInsert

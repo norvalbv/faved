@@ -1,8 +1,11 @@
 'use client'
 
 import { ReactElement } from 'react'
-import { ImportanceWeights } from './types'
+import { ImportanceWeights } from '@/lib/types/calibration'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/src/components/ui/select'
+import { useCalibrationStore } from './store'
+import { updateCalibrationWeights } from '@/lib/actions/calibration'
+import { toast } from 'sonner'
 
 const WEIGHT_OPTIONS = [
   { value: '0', label: 'Not Important' },
@@ -21,9 +24,32 @@ const ASPECTS: Array<{ key: keyof ImportanceWeights; label: string }> = [
 ]
 
 export const ImportanceConfig = (): ReactElement => {
-  const handleWeightChange = (aspect: keyof ImportanceWeights, value: string) => {
-    // TODO: Implement weight change handler
-    console.log(aspect, value)
+  const { weights, setWeights, selectedBriefId } = useCalibrationStore()
+
+  const handleWeightChange = async (aspect: keyof ImportanceWeights, value: string) => {
+    if (!selectedBriefId) {
+      toast.error('Please select a brief type first')
+      return
+    }
+
+    const newWeights = {
+      ...weights,
+      [aspect]: parseFloat(value)
+    }
+
+    // Update local state
+    setWeights(newWeights)
+
+    // Update database
+    try {
+      const result = await updateCalibrationWeights(selectedBriefId, newWeights)
+      if (!result.success) {
+        toast.error(result.message)
+      }
+    } catch (error) {
+      console.error('Failed to update weights:', error)
+      toast.error('Failed to save weights')
+    }
   }
 
   return (
@@ -34,7 +60,7 @@ export const ImportanceConfig = (): ReactElement => {
             {label}
           </label>
           <Select
-            defaultValue="0.5"
+            value={weights[key].toString()}
             onValueChange={(value: string) => handleWeightChange(key, value)}
           >
             <SelectTrigger id={key}>
