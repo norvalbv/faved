@@ -44,6 +44,24 @@ interface FeedbackSectionProps {
   metadata: SubmissionMetadata
 }
 
+const transformBrandAlignment = (alignment?: FeedbackItem['brandAlignment']) => {
+  if (!alignment) {
+    return {
+      score: 0,
+      confidence: 0,
+      alignment: [],
+      misalignment: []
+    }
+  }
+  
+  return {
+    score: alignment.score,
+    confidence: alignment.confidence,
+    alignment: [], // No alignment strengths in old data structure
+    misalignment: alignment.issues || []
+  }
+}
+
 const renderAIFeedback = (item: FeedbackItem) => {
   if (!item.contentQuality && !item.brandSafety && !item.brandAlignment && !item.sellingPoints) return null
 
@@ -52,44 +70,28 @@ const renderAIFeedback = (item: FeedbackItem) => {
       {item.contentQuality && (
         <div>
           <h4 className="font-medium text-gray-900 mb-4">Content Quality Analysis</h4>
-          <QualityWidget 
-            metrics={[
-              { label: 'Content Quality', value: item.contentQuality.score, max: 100 }
-            ]}
-            strengths={item.contentQuality.strengths}
-            improvements={item.contentQuality.improvements}
-          />
+          <QualityWidget contentQuality={item.contentQuality} />
         </div>
       )}
 
       {item.brandSafety && (
         <div>
           <h4 className="font-medium text-gray-900 mb-4">Brand Safety Analysis</h4>
-          <SafetyWidget 
-            score={item.brandSafety.score}
-            confidence={item.brandSafety.confidence}
-            issues={item.brandSafety.issues}
-          />
+          <SafetyWidget brandSafety={item.brandSafety} />
         </div>
       )}
 
       {item.brandAlignment && (
         <div>
           <h4 className="font-medium text-gray-900 mb-4">Brand Alignment</h4>
-          <AlignmentWidget 
-            toneMatch={item.brandAlignment.toneMatch}
-            issues={item.brandAlignment.issues}
-          />
+          <AlignmentWidget brandAlignment={transformBrandAlignment(item.brandAlignment)} />
         </div>
       )}
 
       {item.sellingPoints && (
         <div>
           <h4 className="font-medium text-gray-900 mb-4">Selling Points</h4>
-          <SellingPointsWidget 
-            present={item.sellingPoints.present}
-            missing={item.sellingPoints.missing}
-          />
+          <SellingPointsWidget sellingPoints={item.sellingPoints} />
         </div>
       )}
     </div>

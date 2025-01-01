@@ -1,7 +1,4 @@
 import { AnalysisResult } from '@/lib/types/analysis'
-import { Brief } from '@/lib/types/brief'
-import { Submission } from '@/lib/types/submission'
-import { ImportanceWeights } from '@/lib/types/calibration'
 
 export interface CalibrationExample {
   content: string
