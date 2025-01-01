@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@/src/components/ui/select'
 import { createSubmission } from '@/lib/actions/submissions'
-import type { SubmissionMetadata } from '@/lib/types/submission'
+import { toast } from 'sonner'
 
 interface Props {
   briefId: string
@@ -32,7 +32,6 @@ export const BriefSubmissionForm = ({ briefId }: Props): ReactElement => {
   const [type, setType] = useState<SubmissionType>('draft_script')
   const [content, setContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,35 +41,35 @@ export const BriefSubmissionForm = ({ briefId }: Props): ReactElement => {
     }
     
     setIsSubmitting(true)
-    setError(null)
     
     try {
-      const metadata: Omit<SubmissionMetadata, 'userId'> = {
-        type,
-        message: content,
-        stageId: '1',
-        input: content,
-        sender: 'Anonymous',
-        submitted: true,
-        feedbackHistory: []
-      }
-
-      const submissionResult = await createSubmission({
+      const result = await createSubmission({
         briefId,
         content,
-        metadata
+        metadata: {
+          type,
+          message: content,
+          stageId: '1',
+          input: content,
+          sender: 'Anonymous',
+          submitted: true,
+          feedbackHistory: []
+        }
       })
 
-      if (submissionResult.success) {
+      if (result.success) {
         setContent('')
+        toast.success('Content submitted successfully')
         router.refresh()
-        router.push(`/campaigns/${submissionResult.campaignId}`)
+        if (result.campaignId) {
+          router.push(`/campaigns/${result.campaignId}`)
+        }
       } else {
-        setError(submissionResult.error || 'Failed to submit content')
+        toast.error(result.error || 'Failed to submit content')
       }
     } catch (error) {
       console.error('Error submitting content:', error)
-      setError('Failed to submit content')
+      toast.error('Failed to submit content')
     } finally {
       setIsSubmitting(false)
     }
@@ -139,10 +138,6 @@ export const BriefSubmissionForm = ({ briefId }: Props): ReactElement => {
           </div>
         )}
       </div>
-
-      {error && (
-        <p className="text-sm text-red-500">{error}</p>
-      )}
 
       {type === 'draft_script' && (
         <Button

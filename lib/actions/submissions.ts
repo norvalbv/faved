@@ -1,177 +1,178 @@
 'use server'
 
-import { SubmissionRepository } from '../data-store/repositories/submission'
-import { CampaignRepository } from '../data-store/repositories/campaign'
-import { BriefRepository } from '../data-store/repositories/brief'
-import { Submission, SubmissionMetadata } from '../types/submission'
-import { auth } from '../utils/auth'
-import { nanoid } from 'nanoid'
-import { analyzeSubmission } from '../services/ai'
 import { revalidatePath } from 'next/cache'
-
-export async function getSubmission(id: string) {
-  try {
-    // 1. Verify user is logged in
-    const { userId } = auth()
-    if (!userId) {
-      throw new Error('Unauthorized')
-    }
-
-    // 2. Get submission
-    const submission = await SubmissionRepository.getById(id)
-    if (!submission) {
-      throw new Error('Submission not found')
-    }
-
-    return submission as Submission
-  } catch (error) {
-    console.error('Error fetching submission:', error)
-    throw error
-  }
-}
-
-export async function listSubmissions(campaignId?: string) {
-  try {
-    // 1. Verify user is logged in
-    const { userId } = auth()
-    if (!userId) {
-      throw new Error('Unauthorized')
-    }
-
-    // 2. Get submissions
-    const submissions = await SubmissionRepository.list(campaignId)
-    return submissions as Submission[]
-  } catch (error) {
-    console.error('Error fetching submissions:', error)
-    throw error
-  }
-}
-
-export async function listRecentSubmissions(limit: number = 5): Promise<Submission[]> {
-  try {
-    // 1. Verify user is logged in
-    const { userId } = auth()
-    if (!userId) {
-      throw new Error('Unauthorized')
-    }
-
-    // 2. Get recent submissions
-    const submissions = await SubmissionRepository.listRecent(limit)
-    return submissions as Submission[]
-  } catch (error) {
-    console.error('Error fetching recent submissions:', error)
-    throw error
-  }
-}
+import { drizzleDb } from '../data-store'
+import { aiService } from '../services/ai'
+import { submissions } from '../data-store/schema/submissions'
+import { briefs } from '../data-store/schema/briefs'
+import { campaigns } from '../data-store/schema/campaigns'
+import { eq } from 'drizzle-orm'
+import { nanoid } from 'nanoid'
+import { auth } from '../utils/auth'
 
 export async function createSubmission(data: {
-  briefId: string
   content: string
-  metadata: Omit<SubmissionMetadata, 'userId'> & { isHistoricalImport?: boolean }
-}) {
+  briefId: string
+  campaignId?: string
+  isHistoricalImport?: boolean
+  metadata?: Record<string, any>
+}): Promise<{ success: boolean; campaignId?: string; error?: string }> {
   try {
-    // 1. Verify user is logged in
     const { userId } = auth()
-    if (!userId) {
-      throw new Error('Unauthorized')
-    }
+    if (!userId) throw new Error('Unauthorized')
 
-    // 2. Get the brief for AI analysis
-    const brief = await BriefRepository.getById(data.briefId)
-    if (!brief) {
-      throw new Error('Brief not found')
-    }
+    const brief = await drizzleDb.select().from(briefs).where(eq(briefs.id, data.briefId)).execute()
+    if (!brief[0]) throw new Error('Brief not found')
 
-    // Cast brief metadata to expected type
-    const briefWithMetadata = {
-      ...brief,
-      metadata: {
-        overview: {
-          what: brief.description,
-          gettingStarted: (brief.metadata as { gettingStarted?: string } | undefined)?.gettingStarted || ''
-        },
-        guidelines: (brief.metadata as { guidelines?: { category: string; items: string[] }[] } | undefined)?.guidelines || [{
-          category: 'Requirements',
-          items: [brief.description]
-        }]
+    let campaign = null
+    if (data.campaignId) {
+      campaign = await drizzleDb.select().from(campaigns).where(eq(campaigns.id, data.campaignId)).execute()
+      if (!campaign[0]) throw new Error('Campaign not found')
+    } else {
+      // Create new campaign if one doesn't exist
+      const existingCampaign = await drizzleDb
+        .select()
+        .from(campaigns)
+        .where(eq(campaigns.briefId, data.briefId))
+        .execute()
+
+      if (existingCampaign[0]) {
+        campaign = existingCampaign
+      } else {
+        campaign = await drizzleDb
+          .insert(campaigns)
+          .values({
+            id: nanoid(),
+            title: `${brief[0].type} Campaign`,
+            description: brief[0].description,
+            status: 'active',
+            briefId: data.briefId,
+            projectId: brief[0].projectId,
+            metadata: {
+              submissionType: data.metadata?.type || 'submission',
+              userId
+            }
+          })
+          .returning()
       }
     }
 
-    // 3. Find or create campaign
-    const campaign = await CampaignRepository.findByBriefId(data.briefId)
-    let campaignId: string
+    const now = new Date().toISOString()
 
-    if (campaign) {
-      campaignId = campaign.id
-    } else {
-      // Create new campaign
-      const newCampaign = await CampaignRepository.create({
-        id: nanoid(),
-        title: `${data.metadata.type} Submission`,
-        description: data.content.slice(0, 100) + (data.content.length > 100 ? '...' : ''),
-        status: 'active',
-        briefId: data.briefId,
-        metadata: {
-          submissionType: data.metadata.type,
-          userId
-        }
-      })
-      campaignId = newCampaign.id
-    }
+    // Create submission
+    const submission = await drizzleDb.insert(submissions).values({
+      id: nanoid(),
+      content: data.content,
+      projectId: brief[0].projectId,
+      campaignId: campaign[0].id,
+      type: 'submission',
+      metadata: {
+        userId,
+        status: 'pending_review',
+        feedbackHistory: [],
+        createdAt: now,
+        ...data.metadata
+      }
+    }).returning()
 
-    // 4. Perform AI analysis if not a historical import
-    let feedbackHistory = data.metadata.feedbackHistory || []
-    if (!data.metadata.isHistoricalImport) {
+    // Run AI analysis if not historical import
+    if (!data.isHistoricalImport) {
       try {
-        const mockSubmission: Submission = {
-          id: nanoid(), // Temporary ID for analysis
-          type: 'submission',
-          content: data.content,
-          metadata: data.metadata as SubmissionMetadata,
-          projectId: data.briefId,
-          campaignId,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }
-
-        const aiAnalysis = await analyzeSubmission(mockSubmission, briefWithMetadata)
+        const analysis = await aiService.analyzeSubmission(submission[0], brief[0])
         
-        // Add AI feedback to history
-        feedbackHistory.push({
-          feedback: aiAnalysis.matches.map((m: { category: string; items: string[] }) => `${m.category}:\n${m.items.join('\n')}`).join('\n\n') +
-            (aiAnalysis.mismatches.length > 0 ? `\n\nAreas for Improvement:\n${aiAnalysis.mismatches.map((m: { items: string[] }) => m.items.join('\n')).join('\n')}` : ''),
-          createdAt: new Date().toISOString(),
-          status: aiAnalysis.brandSafety.pass ? 'comment' : 'rejected',
-          isAiFeedback: true
-        })
+        // Format AI feedback
+        const aiFeedback = [
+          'Content Quality Analysis:',
+          `Clarity: ${analysis.content.quality.clarity}/100`,
+          `Engagement: ${analysis.content.quality.engagement}/100`,
+          `Technical Accuracy: ${analysis.content.quality.technicalAccuracy}/100`,
+          '',
+          'Strengths:',
+          ...analysis.content.quality.strengths.map(s => `• ${s}`),
+          '',
+          'Areas for Improvement:',
+          ...analysis.content.quality.improvements.map(i => `• ${i}`),
+          '',
+          'Brand Safety Analysis:',
+          `Overall Score: ${analysis.brandSafety.score}/100`,
+          `Confidence: ${analysis.brandSafety.confidence}%`,
+          analysis.brandSafety.issues.length > 0 ? [
+            '',
+            'Safety Issues:',
+            ...analysis.brandSafety.issues.map(i => `• ${i}`)
+          ].join('\n') : '',
+          '',
+          'Brand Alignment:',
+          `Tone Match: ${analysis.brandAlignment.toneMatch}/100`,
+          analysis.brandAlignment.issues.length > 0 ? [
+            '',
+            'Alignment Issues:',
+            ...analysis.brandAlignment.issues.map(i => `• ${i}`)
+          ].join('\n') : '',
+          '',
+          'Selling Points:',
+          'Present:',
+          ...analysis.content.sellingPoints.present.map(p => `• ${p}`),
+          '',
+          'Missing:',
+          ...analysis.content.sellingPoints.missing.map(m => `• ${m}`)
+        ].filter(Boolean).join('\n')
 
-        // Update metadata with rejection status
-        data.metadata.status = aiAnalysis.brandSafety.pass ? 'pending' : 'rejected'
-        data.metadata.stageId = aiAnalysis.brandSafety.pass ? '1' : '3' // Stage 3 for rejected, Stage 1 for pending
+        // Update submission with analysis results
+        await drizzleDb
+          .update(submissions)
+          .set({
+            metadata: {
+              ...submission[0].metadata as Record<string, any>,
+              feedbackHistory: [{
+                feedback: aiFeedback,
+                brandSafety: {
+                  pass: analysis.brandSafety.pass,
+                  issues: analysis.brandSafety.issues,
+                  score: analysis.brandSafety.score,
+                  confidence: analysis.brandSafety.confidence
+                },
+                brandAlignment: {
+                  toneMatch: analysis.brandAlignment.toneMatch,
+                  issues: analysis.brandAlignment.issues,
+                  score: analysis.brandAlignment.score,
+                  confidence: analysis.brandAlignment.confidence
+                },
+                contentQuality: {
+                  score: analysis.content.quality.score,
+                  strengths: analysis.content.quality.strengths,
+                  improvements: analysis.content.quality.improvements,
+                  tone: analysis.content.quality.tone
+                },
+                sellingPoints: {
+                  present: analysis.content.sellingPoints.present,
+                  missing: analysis.content.sellingPoints.missing,
+                  effectiveness: analysis.content.sellingPoints.effectiveness
+                },
+                timestamp: analysis.timestamp,
+                createdAt: now,
+                isAiFeedback: true,
+                status: 'comment'
+              }]
+            }
+          })
+          .where(eq(submissions.id, submission[0].id))
       } catch (error) {
         console.error('AI analysis failed:', error)
-        // Continue with submission creation even if AI analysis fails
       }
     }
 
-    // 5. Create submission
-    await SubmissionRepository.create({
-      campaignId,
-      type: 'submission',
-      content: data.content,
-      metadata: {
-        ...data.metadata,
-        userId,
-        feedbackHistory
-      }
-    })
-
-    // Revalidate the submissions page
-    revalidatePath('/campaigns/[id]/submissions/[submissionId]', 'page')
-
-    return { success: true, campaignId }
+    revalidatePath('/dashboard')
+    revalidatePath('/campaigns')
+    return { 
+      success: true, 
+      campaignId: campaign[0].id
+    }
   } catch (error) {
     console.error('Error creating submission:', error)
-    return { success: false, error: 'Failed to create submission' }
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to create submission' 
+    }
   }
 } 
