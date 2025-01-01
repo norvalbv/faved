@@ -16,7 +16,7 @@ export class ContentAnalyzer {
     this.config = {
       temperature: config.temperature ?? 0.5,
       maxTokens: config.maxTokens ?? 1000,
-      model: config.model ?? 'gpt-4o-mini'
+      model: config.model ?? 'gpt-4'
     }
   }
 
@@ -32,38 +32,12 @@ export class ContentAnalyzer {
             content: `You are a content quality specialist analyzing submissions for effectiveness and selling points.
             
 ANALYSIS FRAMEWORK:
-1. Content Quality (Based on ${brief.type})
+1. Content Quality
    - Clarity (0-100)
    - Engagement (0-100)
    - Technical Accuracy (0-100)
 
-2. Brief-Specific Quality
-   game_design:
-   - Game mechanics explanation
-   - Character design details
-   - Level design clarity
-
-   visual_creator:
-   - Visual description quality
-   - Creative process clarity
-   - Tool usage explanation
-
-   filmmaking:
-   - Production workflow clarity
-   - Technical terminology
-   - Process explanation
-
-   logo_design:
-   - Design process explanation
-   - Brand understanding
-   - Technical design terms
-
-   booktuber:
-   - Writing process clarity
-   - Story development
-   - Content organization
-
-3. Selling Points
+2. Selling Points
    - Key messages present
    - Missing elements
    - Overall effectiveness (0-100)
@@ -103,56 +77,15 @@ confidence: [0-100]`
   }
 
   private buildPrompt(submission: Submission, brief: Brief): string {
-    const briefContext = this.getBriefTypeContext(brief)
-    
     return `Analyze this submission for content quality and effectiveness:
 
-BRIEF TYPE: ${brief.type}
-TITLE: ${brief.title}
-DESCRIPTION: ${brief.description}
-
-BRIEF CONTEXT:
-${briefContext}
-
-BRIEF METADATA:
+BRIEF:
+${brief.title}
+${brief.description}
 ${JSON.stringify(brief.metadata, null, 2)}
 
-SUBMISSION CONTENT:
-${submission.content}
-
-Analyze how well this content matches the quality requirements for a ${brief.type} submission.`
-  }
-
-  private getBriefTypeContext(brief: Brief): string {
-    const typeSpecificContext = {
-      game_design: `
-- Focus on game development workflow
-- Check for character design methodology
-- Verify level design process
-- Look for game mechanics explanation`,
-      visual_creator: `
-- Focus on visual content creation process
-- Check for organization methodology
-- Verify planning approach
-- Look for creative workflow explanation`,
-      filmmaking: `
-- Focus on pre-production workflow
-- Check for shot planning methodology
-- Verify production process
-- Look for technical terminology`,
-      logo_design: `
-- Focus on brand identity process
-- Check for design methodology
-- Verify client presentation approach
-- Look for brand understanding`,
-      booktuber: `
-- Focus on content planning
-- Check for story development
-- Verify writing process
-- Look for content organization`
-    }
-
-    return typeSpecificContext[brief.type as keyof typeof typeSpecificContext] || ''
+SUBMISSION:
+${submission.content}`
   }
 
   private parseResponse(response: string): ContentAnalysisResult {
