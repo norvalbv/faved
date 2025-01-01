@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactElement } from 'react'
+import { ReactElement, useEffect } from 'react'
 import { ImportanceWeights } from '@/lib/types/calibration'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/src/components/ui/select'
 import { useCalibrationStore } from './store'
@@ -23,18 +23,38 @@ const ASPECTS: Array<{ key: keyof ImportanceWeights; label: string }> = [
   { key: 'guidelines', label: 'Guidelines Adherence' },
 ]
 
+const defaultWeights: ImportanceWeights = {
+  pronunciation: 0.5,
+  formatting: 0.5,
+  content: 0.75,
+  brandAlignment: 0.75,
+  guidelines: 0.75,
+}
+
 export const ImportanceConfig = (): ReactElement => {
   const { weights, setWeights, selectedBriefId } = useCalibrationStore()
 
-  const handleWeightChange = async (aspect: keyof ImportanceWeights, value: string) => {
+  // Set default weights when component mounts or brief type changes
+  useEffect(() => {
+    if (selectedBriefId) {
+      handleWeightChange('all', defaultWeights)
+    }
+  }, [selectedBriefId])
+
+  const handleWeightChange = async (aspect: keyof ImportanceWeights | 'all', value: string | ImportanceWeights) => {
     if (!selectedBriefId) {
       toast.error('Please select a brief type first')
       return
     }
 
-    const newWeights = {
-      ...weights,
-      [aspect]: parseFloat(value)
+    let newWeights: ImportanceWeights
+    if (aspect === 'all') {
+      newWeights = value as ImportanceWeights
+    } else {
+      newWeights = {
+        ...weights,
+        [aspect]: parseFloat(value as string)
+      }
     }
 
     // Update local state

@@ -9,6 +9,9 @@ import { campaigns } from '../data-store/schema/campaigns'
 import { eq } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { auth } from '../utils/auth'
+import { analyzeCalibratedSubmission } from './calibrated-analysis'
+import { SubmissionMetadata } from '@/lib/types/submission'
+import { BriefMetadata } from '@/lib/types/brief'
 
 export async function createSubmission(data: {
   content: string
@@ -78,7 +81,20 @@ export async function createSubmission(data: {
     // Run AI analysis if not historical import
     if (!data.isHistoricalImport) {
       try {
-        const analysis = await aiService.analyzeSubmission(submission[0], brief[0])
+        // Ensure submission has required fields for analysis
+        const submissionForAnalysis = {
+          ...submission[0],
+          projectId: submission[0].projectId || '',
+          campaignId: submission[0].campaignId || undefined,
+          metadata: submission[0].metadata as SubmissionMetadata
+        }
+        
+        const briefForAnalysis = {
+          ...brief[0],
+          metadata: brief[0].metadata as BriefMetadata
+        }
+        
+        const analysis = await analyzeCalibratedSubmission(submissionForAnalysis, briefForAnalysis)
         
         // Format AI feedback
         const aiFeedback = [
@@ -88,10 +104,10 @@ export async function createSubmission(data: {
           `Technical Accuracy: ${analysis.content.quality.technicalAccuracy}/100`,
           '',
           'Strengths:',
-          ...analysis.content.quality.strengths.map(s => `• ${s}`),
+          ...analysis.content.quality.strengths.map((s: string) => `• ${s}`),
           '',
           'Areas for Improvement:',
-          ...analysis.content.quality.improvements.map(i => `• ${i}`),
+          ...analysis.content.quality.improvements.map((i: string) => `• ${i}`),
           '',
           'Brand Safety Analysis:',
           `Overall Score: ${analysis.brandSafety.score}/100`,
@@ -99,23 +115,29 @@ export async function createSubmission(data: {
           analysis.brandSafety.issues.length > 0 ? [
             '',
             'Safety Issues:',
-            ...analysis.brandSafety.issues.map(i => `• ${i}`)
+            ...analysis.brandSafety.issues.map((i: string) => `• ${i}`)
           ].join('\n') : '',
           '',
           'Brand Alignment:',
-          `Tone Match: ${analysis.brandAlignment.toneMatch}/100`,
-          analysis.brandAlignment.issues.length > 0 ? [
+          `Score: ${analysis.brandAlignment.score}/100`,
+          `Confidence: ${analysis.brandAlignment.confidence}%`,
+          analysis.brandAlignment.alignment.length > 0 ? [
+            '',
+            'Alignment Strengths:',
+            ...analysis.brandAlignment.alignment.map((i: string) => `• ${i}`)
+          ].join('\n') : '',
+          analysis.brandAlignment.misalignment.length > 0 ? [
             '',
             'Alignment Issues:',
-            ...analysis.brandAlignment.issues.map(i => `• ${i}`)
+            ...analysis.brandAlignment.misalignment.map((i: string) => `• ${i}`)
           ].join('\n') : '',
           '',
           'Selling Points:',
           'Present:',
-          ...analysis.content.sellingPoints.present.map(p => `• ${p}`),
+          ...analysis.content.sellingPoints.present.map((p: string) => `• ${p}`),
           '',
           'Missing:',
-          ...analysis.content.sellingPoints.missing.map(m => `• ${m}`)
+          ...analysis.content.sellingPoints.missing.map((m: string) => `• ${m}`)
         ].filter(Boolean).join('\n')
 
         // Update submission with analysis results
@@ -127,14 +149,13 @@ export async function createSubmission(data: {
               feedbackHistory: [{
                 feedback: aiFeedback,
                 brandSafety: {
-                  pass: analysis.brandSafety.pass,
                   issues: analysis.brandSafety.issues,
                   score: analysis.brandSafety.score,
                   confidence: analysis.brandSafety.confidence
                 },
                 brandAlignment: {
-                  toneMatch: analysis.brandAlignment.toneMatch,
-                  issues: analysis.brandAlignment.issues,
+                  alignment: analysis.brandAlignment.alignment,
+                  misalignment: analysis.brandAlignment.misalignment,
                   score: analysis.brandAlignment.score,
                   confidence: analysis.brandAlignment.confidence
                 },
@@ -149,7 +170,6 @@ export async function createSubmission(data: {
                   missing: analysis.content.sellingPoints.missing,
                   effectiveness: analysis.content.sellingPoints.effectiveness
                 },
-                timestamp: analysis.timestamp,
                 createdAt: now,
                 isAiFeedback: true,
                 status: 'comment'

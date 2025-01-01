@@ -75,7 +75,7 @@ export const BriefSubmissionForm = ({ briefId }: Props): ReactElement => {
     }
   }, [briefId, content, type, router])
 
-  const handleUploadComplete = useCallback((campaignId: string) => {
+  const handleUploadComplete = useCallback(({ campaignId }: { campaignId: string }) => {
     router.refresh()
     router.push(`/campaigns/${campaignId}`)
   }, [router])
@@ -133,7 +133,7 @@ export const BriefSubmissionForm = ({ briefId }: Props): ReactElement => {
             <FileUpload 
               briefId={briefId} 
               onUploadComplete={handleUploadComplete}
-              mode={type === 'draft_video' ? 'brief' : 'import'} 
+              mode="brief" 
             />
           </div>
         )}

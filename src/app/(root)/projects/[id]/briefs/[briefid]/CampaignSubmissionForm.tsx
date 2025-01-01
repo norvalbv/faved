@@ -14,9 +14,11 @@ import {
 } from '@/src/components/ui/select'
 import { createSubmission } from '@/lib/actions/submissions'
 import type { SubmissionMetadata } from '@/lib/types/submission'
+import type { ProcessingResult } from '@/lib/types/calibration'
 
 interface Props {
   campaignId: string
+  briefId: string
 }
 
 const SUBMISSION_TYPES = [
@@ -27,12 +29,16 @@ const SUBMISSION_TYPES = [
 
 type SubmissionType = typeof SUBMISSION_TYPES[number]['value']
 
-export const CampaignSubmissionForm = ({ campaignId }: Props): ReactElement => {
+export const CampaignSubmissionForm = ({ campaignId, briefId }: Props): ReactElement => {
   const router = useRouter()
   const [type, setType] = useState<SubmissionType>('draft_script')
   const [content, setContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const handleUploadComplete = ({ campaignId: uploadedCampaignId }: { campaignId: string; processingResult: ProcessingResult }) => {
+    setContent(uploadedCampaignId)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -52,7 +58,8 @@ export const CampaignSubmissionForm = ({ campaignId }: Props): ReactElement => {
       }
 
       const result = await createSubmission({
-        briefId: campaignId,
+        briefId,
+        campaignId,
         content,
         metadata
       })
@@ -123,8 +130,8 @@ export const CampaignSubmissionForm = ({ campaignId }: Props): ReactElement => {
             </label>
             <FileUpload 
               mode="brief" 
-              briefId={campaignId}
-              onUploadComplete={(url) => setContent(url)} 
+              briefId={briefId}
+              onUploadComplete={handleUploadComplete} 
             />
           </div>
         )}

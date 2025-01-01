@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 
 interface AlignmentWidgetProps {
   toneMatch: number
-  issues: string[]
+  issues?: string[]
 }
 
 const renderMetricCard = (label: string, value: number, max: number, color: string) => (
@@ -16,7 +16,7 @@ const renderMetricCard = (label: string, value: number, max: number, color: stri
   </div>
 )
 
-export const AlignmentWidget = ({ toneMatch, issues }: AlignmentWidgetProps): ReactElement => (
+export const AlignmentWidget = ({ toneMatch = 0, issues = [] }: AlignmentWidgetProps): ReactElement => (
   <div className="space-y-4">
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       {renderMetricCard("Tone Match", toneMatch, 100,
@@ -31,12 +31,16 @@ export const AlignmentWidget = ({ toneMatch, issues }: AlignmentWidgetProps): Re
         <span>Alignment Issues</span>
       </div>
       <div className="p-4 space-y-3">
-        {issues.map((line, idx) => (
-          <div key={idx} className="flex items-start gap-3 group">
-            <div className="w-1 h-1 rounded-full mt-2 bg-current opacity-40 group-hover:opacity-100 transition-opacity" />
-            <p className="text-sm text-gray-700 leading-relaxed flex-1">{line}</p>
-          </div>
-        ))}
+        {issues.length > 0 ? (
+          issues.map((line, idx) => (
+            <div key={idx} className="flex items-start gap-3 group">
+              <div className="w-1 h-1 rounded-full mt-2 bg-current opacity-40 group-hover:opacity-100 transition-opacity" />
+              <p className="text-sm text-gray-700 leading-relaxed flex-1">{line}</p>
+            </div>
+          ))
+        ) : (
+          <p className="text-sm text-gray-500 italic">No alignment issues found</p>
+        )}
       </div>
     </div>
   </div>
