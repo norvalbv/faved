@@ -3,7 +3,11 @@ import { ImportanceWeights } from '@/lib/types/calibration'
 
 export class AnalysisProcessor {
   processAnalysis(rawAnalysis: Partial<AnalysisResult>): AnalysisResult {
-    return {
+    // Helper function to round scores
+    const roundScore = (score: number) => Math.round(score)
+
+    // Process the raw analysis
+    const processed = {
       ...DEFAULT_ANALYSIS_RESULT,
       ...rawAnalysis,
       content: {
@@ -11,22 +15,33 @@ export class AnalysisProcessor {
         ...rawAnalysis.content,
         quality: {
           ...DEFAULT_ANALYSIS_RESULT.content.quality,
-          ...(rawAnalysis.content?.quality || {})
+          ...(rawAnalysis.content?.quality || {}),
+          // Round all numeric scores
+          score: roundScore(rawAnalysis.content?.quality?.score || 0),
+          clarity: roundScore(rawAnalysis.content?.quality?.clarity || 0),
+          engagement: roundScore(rawAnalysis.content?.quality?.engagement || 0),
+          technicalAccuracy: roundScore(rawAnalysis.content?.quality?.technicalAccuracy || 0)
         },
         sellingPoints: {
           ...DEFAULT_ANALYSIS_RESULT.content.sellingPoints,
-          ...(rawAnalysis.content?.sellingPoints || {})
+          ...(rawAnalysis.content?.sellingPoints || {}),
+          score: roundScore(rawAnalysis.content?.sellingPoints?.score || 0),
+          effectiveness: roundScore(rawAnalysis.content?.sellingPoints?.effectiveness || 0)
         }
       },
       brandAlignment: {
         ...DEFAULT_ANALYSIS_RESULT.brandAlignment,
-        ...(rawAnalysis.brandAlignment || {})
+        ...(rawAnalysis.brandAlignment || {}),
+        score: roundScore(rawAnalysis.brandAlignment?.score || 0)
       },
       brandSafety: {
         ...DEFAULT_ANALYSIS_RESULT.brandSafety,
-        ...(rawAnalysis.brandSafety || {})
+        ...(rawAnalysis.brandSafety || {}),
+        score: roundScore(rawAnalysis.brandSafety?.score || 0)
       }
     }
+
+    return processed
   }
 
   applyWeights(analysis: AnalysisResult, weights: ImportanceWeights): AnalysisResult {

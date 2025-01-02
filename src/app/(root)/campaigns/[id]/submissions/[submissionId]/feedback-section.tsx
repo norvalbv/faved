@@ -8,6 +8,7 @@ import { QualityWidget } from './quality-widget'
 import { SafetyWidget } from './safety-widget'
 import { AlignmentWidget } from './alignment-widget'
 import { SellingPointsWidget } from './selling-points-widget'
+import { ActionableInsights } from './actionable-insights'
 
 interface FeedbackSectionProps {
   item: {
@@ -24,14 +25,20 @@ interface FeedbackSectionProps {
 const renderAIFeedback = (analysis: AnalysisResult) => {
   if (!analysis) return null
 
+  console.log(analysis)
+
   return (
     <div className="space-y-8">
-      {analysis.summary && (
-        <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-          <h4 className="font-medium text-blue-900 mb-2">AI Analysis Summary</h4>
-          <p className="text-sm text-blue-800 whitespace-pre-wrap leading-relaxed">
-            {analysis.summary}
-          </p>
+      {/* Always show insights if they exist */}
+      {analysis.insights && (
+        <div className="space-y-8">
+          <ActionableInsights 
+            insights={{
+              sections: analysis.insights.sections,
+              historicalContext: analysis.insights.historicalContext,
+              metadata: analysis.insights.metadata
+            }} 
+          />
         </div>
       )}
 

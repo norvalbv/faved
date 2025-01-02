@@ -1,36 +1,40 @@
+import { PromptConfig } from '../types'
+import { CalibrationProcessor } from './calibration-processor'
+import { CalibrationData } from '@/lib/data-store/schema'
 import { Brief } from '@/lib/types/brief'
-import { Submission } from '@/lib/types/submission'
 import { ImportanceWeights } from '@/lib/types/calibration'
-import { CalibrationExample, PromptConfig } from '../types'
+import { Submission } from '@/lib/types/submission'
 
 export class PromptBuilder {
-  private readonly config: PromptConfig
+  private config: PromptConfig
+  private calibrationProcessor: CalibrationProcessor
 
   constructor(config: PromptConfig) {
     this.config = config
+    this.calibrationProcessor = new CalibrationProcessor()
   }
 
-  buildSystemPrompt(): string {
-    return this.config.systemPrompt
-  }
-
-  buildUserPrompt(
+  buildAnalysisPrompt(
     submission: Submission,
     brief: Brief,
     weights: ImportanceWeights,
-    examples: CalibrationExample[]
+    calibrationData: CalibrationData[]
   ): string {
     const briefContext = this.buildBriefContext(brief)
-    const examplesContext = this.buildExamplesContext(examples)
-    const weightsContext = this.buildWeightsContext(weights)
+    const calibrationContext = this.buildCalibrationContext(calibrationData)
+    const priorityContext = this.buildPriorityContext(weights)
     const analysisInstructions = this.buildAnalysisInstructions(weights)
 
-    return this.config.userPromptTemplate
-      .replace('{{briefContext}}', briefContext)
-      .replace('{{examplesContext}}', examplesContext)
-      .replace('{{weightsContext}}', weightsContext)
-      .replace('{{analysisInstructions}}', analysisInstructions)
-      .replace('{{submissionContent}}', submission.content)
+    return this.config.analysisPrompt
+      .replace('{submission}', submission.content)
+      .replace('{brief}', briefContext)
+      .replace('{calibrationContext}', calibrationContext)
+      .replace('{priorityContext}', priorityContext)
+      .replace('{analysisInstructions}', analysisInstructions)
+  }
+
+  buildSummaryPrompt(): string {
+    return this.config.summaryPrompt
   }
 
   private buildBriefContext(brief: Brief): string {
@@ -45,53 +49,76 @@ ${brief.metadata?.guidelines ? JSON.stringify(brief.metadata.guidelines, null, 2
     `.trim()
   }
 
-  private buildExamplesContext(examples: CalibrationExample[]): string {
-    return examples.map(e => `
-Example ${e.approved ? '(APPROVED)' : '(REJECTED)'}:
-Content:
-"""
-${e.content}
-"""
-Feedback: ${e.feedback}
-Key Metrics:
-- Content Quality: ${e.analysis?.contentQuality ?? 'N/A'}
-- Brand Safety: ${e.analysis?.brandSafety ?? 'N/A'}
-- Effectiveness: ${e.analysis?.effectiveness ?? 'N/A'}
-    `.trim()).join('\n\n')
+  private buildCalibrationContext(calibrationData: CalibrationData[]): string {
+    if (!calibrationData?.length) {
+      return 'No historical data is available for analysis. Recommendations will be based on general best practices and brief requirements.'
+    }
+
+    const approvedCount = calibrationData.filter(item => item.approved).length
+    const patterns = this.calibrationProcessor.processCalibrationData(calibrationData)
+
+    return `
+Based on analysis of ${calibrationData.length} previous submissions (${approvedCount} approved):
+
+${patterns}
+
+These patterns should inform the recommendations while considering the current brief requirements.
+    `.trim()
   }
 
-  private buildWeightsContext(weights: ImportanceWeights): string {
+  private buildPriorityContext(weights: ImportanceWeights): string {
+    // Sort weights by importance
+    const sortedWeights = Object.entries(weights)
+      .sort(([, a], [, b]) => b - a)
+      .map(([key]) => key)
+
+    const priorityMapping = {
+      content: 'Content Quality',
+      brandAlignment: 'Brand Alignment',
+      guidelines: 'Guidelines Adherence',
+      formatting: 'Content Formatting',
+      pronunciation: 'Language & Pronunciation'
+    }
+
     return `
-- Content Quality: ${weights.content * 100}%
-- Brand Alignment: ${weights.brandAlignment * 100}%
-- Guidelines: ${weights.guidelines * 100}%
-- Formatting: ${weights.formatting * 100}%
-- Language: ${weights.pronunciation * 100}%
+Analysis Priorities (in order of importance):
+${sortedWeights.map((key, i) => `${i + 1}. ${priorityMapping[key as keyof typeof priorityMapping]}`).join('\n')}
     `.trim()
   }
 
   private buildAnalysisInstructions(weights: ImportanceWeights): string {
     return `
-1. Content Quality (weighted ${weights.content * 100}%)
+Please analyze the submission focusing on these key areas:
+
+1. Content Quality
    - Clarity and engagement level
    - Technical accuracy and depth
    - Structure and formatting quality
-   - Compare against approved examples
+   - Compare against successful examples
    - Identify specific strengths and areas for improvement
 
-2. Brand Safety & Alignment (weighted ${weights.brandAlignment * 100}%)
+2. Brand Safety & Alignment
    - Brand voice consistency
    - Guidelines adherence
    - Professional standards
    - Compare with historical patterns
    - Flag any potential issues
 
-3. Effectiveness & Impact (weighted ${weights.guidelines * 100}%)
+3. Effectiveness & Impact
    - Key message delivery
    - Target audience resonance
    - Call-to-action effectiveness
    - Compare with successful examples
    - Identify missing elements
+
+Provide specific, actionable recommendations that:
+1. Reference historical patterns and successful examples when available
+2. Focus on concrete, implementable improvements
+3. Prioritize the most important areas for improvement
+4. Include clear explanations of why each change matters
+5. Avoid using percentages or scores in recommendations
+
+Format your response in clear sections with numbered points, ensuring each recommendation is specific and actionable.
     `.trim()
   }
 } 

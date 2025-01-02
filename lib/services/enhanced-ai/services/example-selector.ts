@@ -32,8 +32,8 @@ export class ExampleSelector {
     )
 
     // Split into approved and rejected examples
-    const approvedExamples = this.filterExamplesByApproval(sortedExamples, true)
-    const rejectedExamples = this.filterExamplesByApproval(sortedExamples, false)
+    const approvedExamples = this.filterExamplesByApproval(sortedExamples, true, submission.content)
+    const rejectedExamples = this.filterExamplesByApproval(sortedExamples, false, submission.content)
 
     // Calculate how many examples we want of each type
     const approvedCount = Math.ceil(this.config.maxExamples * this.config.approvedRatio)
@@ -46,9 +46,9 @@ export class ExampleSelector {
     return [...selectedApproved, ...selectedRejected].map(example => this.mapToCalibrationExample(example))
   }
 
-  private filterExamplesByApproval(examples: CalibrationData[], approved: boolean): CalibrationData[] {
+  private filterExamplesByApproval(examples: CalibrationData[], approved: boolean, submissionContent: string): CalibrationData[] {
     return examples.filter(e => {
-      const similarity = this.similarityCalculator.calculateSimilarity(e.content, '')
+      const similarity = this.similarityCalculator.calculateSimilarity(e.content, submissionContent)
       return e.approved === approved && similarity >= this.config.minSimilarity
     })
   }

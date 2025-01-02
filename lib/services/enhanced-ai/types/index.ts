@@ -1,6 +1,7 @@
 import { ImportanceWeights } from '@/lib/types/calibration'
 import { Brief } from '@/lib/types/brief'
 import { Submission } from '@/lib/types/submission'
+import { StructuredInsights } from '@/lib/types/calibration'
 
 export type { Brief, Submission }
 
@@ -20,43 +21,60 @@ export interface CalibrationExample {
   }
 }
 
+export interface ContentQuality {
+  score: number
+  clarity: number
+  engagement: number
+  confidence: number
+  technicalAccuracy: number
+  tone: string[]
+  strengths: string[]
+  improvements: string[]
+}
+
+export interface SellingPoints {
+  score: number
+  confidence: number
+  effectiveness: number
+  present: string[]
+  missing: string[]
+}
+
+export interface BrandSafety {
+  score: number
+  issues: string[]
+  confidence: number
+}
+
+export interface BrandAlignment {
+  score: number
+  confidence: number
+  alignment: string[]
+  misalignment: string[]
+}
+
 export interface AnalysisResult {
-  brandSafety: {
-    score: number
-    issues: string[]
-    confidence: number
-  }
   content: {
-    quality: {
-      score: number
-      clarity: number
-      engagement: number
-      confidence: number
-      technicalAccuracy: number
-      tone: string[]
-      strengths: string[]
-      improvements: string[]
-    }
-    sellingPoints: {
-      score: number
-      confidence: number
-      effectiveness: number
-      present: string[]
-      missing: string[]
-    }
+    quality: ContentQuality
+    sellingPoints: SellingPoints
   }
-  brandAlignment: {
-    score: number
-    confidence: number
-    alignment: string[]
-    misalignment: string[]
+  brandSafety: BrandSafety
+  brandAlignment: BrandAlignment
+  summary: string
+  insights: StructuredInsights
+  metadata: {
+    timestamp: number
+    approvedCount: number
+    totalAnalyzed: number
   }
-  summary?: string
 }
 
 export interface PromptConfig {
-  systemPrompt: string
-  userPromptTemplate: string
+  model: string
+  temperature: number
+  maxTokens: number
+  analysisPrompt: string
+  summaryPrompt: string
 }
 
 export interface ExampleSelectionConfig {
@@ -102,6 +120,21 @@ export const DEFAULT_ANALYSIS_RESULT: AnalysisResult = {
     confidence: 0,
     alignment: [],
     misalignment: [],
+  },
+  summary: '',
+  insights: {
+    historicalContext: '',
+    sections: [],
+    metadata: {
+      totalAnalyzed: 0,
+      approvedCount: 0,
+      timestamp: Date.now()
+    }
+  },
+  metadata: {
+    timestamp: Date.now(),
+    approvedCount: 0,
+    totalAnalyzed: 0
   }
 }
 

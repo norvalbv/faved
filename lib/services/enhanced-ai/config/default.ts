@@ -1,98 +1,45 @@
-import { AIServiceConfig, ExampleSelectionConfig, PromptConfig } from '../types'
+import { PromptConfig } from '../types'
 
-export const defaultAIConfig: AIServiceConfig = {
-  model: 'gpt-4o-mini',
+export const defaultConfig: PromptConfig = {
+  model: 'gpt-4',
   temperature: 0.2,
-  maxRetries: 3,
-  cacheTTL: 1000 * 60 * 5 // 5 minutes
+  maxTokens: 2000,
+  analysisPrompt: `You are an expert content analyst. Analyze the submission based on the brief requirements and historical patterns from our calibration data.
+
+Focus on:
+1. Brand alignment and tone consistency
+2. Content quality and effectiveness
+3. Safety and guideline compliance
+4. Selling points and value proposition
+
+For each aspect, provide:
+- Specific observations
+- Clear, actionable recommendations
+- Concrete examples where possible
+
+Structure your response with clear sections for each focus area. Keep recommendations concise and practical.
+
+Submission to analyze:
+{submission}
+
+Brief requirements:
+{brief}
+
+Historical patterns from calibration data:
+{calibrationContext}`,
+
+  summaryPrompt: `Based on the analysis results and historical patterns, provide structured insights organized into clear sections. Each section should have:
+- A clear title
+- Context from historical data where relevant
+- Specific, actionable points for improvement
+
+Focus on practical recommendations that align with historically successful content patterns.
+
+Analysis results:
+{analysis}
+
+Historical context:
+{calibrationContext}`
 }
 
-export const defaultExampleConfig: ExampleSelectionConfig = {
-  maxExamples: 6,
-  approvedRatio: 0.67, // 2/3 approved examples
-  minSimilarity: 0.3
-}
-
-export const defaultPromptConfig: PromptConfig = {
-  systemPrompt: `You are a calibrated AI content analyzer specializing in script validation. Your role is to analyze content based on specific criteria and return a structured JSON response. Follow these guidelines:
-
-1. Content Quality Assessment:
-   - Score clarity based on message comprehension (0-100)
-   - Evaluate engagement by considering audience appeal
-   - Assess technical accuracy and proper terminology
-   - Identify specific, actionable strengths and improvements
-
-2. Brand Safety Evaluation:
-   - Flag any content that could harm brand reputation
-   - Check for adherence to brand voice and style
-   - Verify professional standards compliance
-   - Provide confidence score based on analysis certainty
-
-3. Brand Alignment Check:
-   - Compare content with brand guidelines
-   - Identify elements that match/mismatch brand identity
-   - Consider target audience appropriateness
-   - Evaluate tone consistency
-
-4. Selling Points Analysis:
-   - Identify key messages and value propositions
-   - Check for clear call-to-action elements
-   - Assess target audience fit
-   - Evaluate message effectiveness
-
-Return only valid JSON matching this exact structure:
-{
-  "brandSafety": {
-    "score": number (0-100),
-    "issues": string[],
-    "confidence": number (0-100)
-  },
-  "content": {
-    "quality": {
-      "score": number (0-100),
-      "clarity": number (0-100),
-      "engagement": number (0-100),
-      "confidence": number (0-100),
-      "technicalAccuracy": number (0-100),
-      "tone": string[],
-      "strengths": string[],
-      "improvements": string[]
-    },
-    "sellingPoints": {
-      "score": number (0-100),
-      "confidence": number (0-100),
-      "effectiveness": number (0-100),
-      "present": string[],
-      "missing": string[]
-    }
-  },
-  "brandAlignment": {
-    "score": number (0-100),
-    "confidence": number (0-100),
-    "alignment": string[],
-    "misalignment": string[]
-  }
-}`,
-
-  userPromptTemplate: `Analyze this content based on brand guidelines, brief requirements, and historical examples.
-
-BRIEF DETAILS:
-{{briefContext}}
-
-IMPORTANCE WEIGHTS:
-{{weightsContext}}
-
-CALIBRATION EXAMPLES:
-{{examplesContext}}
-
-CONTENT TO ANALYZE:
-"""
-{{submissionContent}}
-"""
-
-Analyze considering:
-{{analysisInstructions}}
-
-Provide a detailed analysis in the specified JSON format. Be specific and actionable in your feedback.
-For very short or minimal content, provide appropriate low scores and specific improvement suggestions.`
-} 
+export default defaultConfig 
