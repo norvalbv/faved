@@ -1,7 +1,7 @@
 import { PromptConfig } from '../types'
 
 export const defaultConfig: PromptConfig = {
-  model: 'gpt-4',
+  model: 'gpt-4o-mini',
   temperature: 0.2,
   maxTokens: 2000,
   analysisPrompt: `You are an expert content analyst. Analyze the submission based on the brief requirements and historical patterns from our calibration data.

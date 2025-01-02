@@ -25,7 +25,7 @@ export class EnhancedAIService {
     this.calibrationProcessor = new CalibrationProcessor()
     this.insightsGenerator = new InsightsGenerator()
     this.promptBuilder = new PromptBuilder({
-      model: 'gpt-4-1106-preview',
+      model: 'gpt-4o-mini',
       temperature: 0.7,
       maxTokens: 1000,
       analysisPrompt: `Analyze the following content based on historical patterns and brief requirements:
@@ -89,7 +89,7 @@ Analysis Instructions: {analysisInstructions}`,
 
       // Get AI analysis
       const response = await openai.chat.completions.create({
-        model: 'gpt-4-1106-preview',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
