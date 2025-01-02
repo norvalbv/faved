@@ -166,13 +166,13 @@ Analysis Instructions: {analysisInstructions}`,
       }
 
       const processedAnalysis = this.analysisProcessor.processAnalysis(analysis)
-      const weightedAnalysis = this.analysisProcessor.applyWeights(processedAnalysis, weights)
+      const weightedAnalysis = this.analysisProcessor.applyWeights(processedAnalysis, effectiveWeights)
       
       // Generate insights using the insights generator
       const insights = await this.insightsGenerator.generateStructuredInsights(
         submission,
         brief,
-        weights,
+        effectiveWeights,
         examples.map(e => ({
           id: '',
           submissionId: null,
@@ -196,7 +196,7 @@ Analysis Instructions: {analysisInstructions}`,
       // Create feedback entry
       const feedback = {
         status: 'comment',
-        weights,
+        weights: effectiveWeights,
         analysis: {
           content: {
             quality: {

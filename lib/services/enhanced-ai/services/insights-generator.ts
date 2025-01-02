@@ -11,7 +11,7 @@ export class InsightsGenerator {
     this.calibrationProcessor = new CalibrationProcessor()
   }
 
-  async generateStructuredInsights(
+  generateStructuredInsights(
     submission: Submission,
     brief: Brief,
     weights: ImportanceWeights,
@@ -21,9 +21,9 @@ export class InsightsGenerator {
     const historicalContext = this.generateHistoricalContext(calibrationData)
 
     // Generate sections with insights
-    const sections = await this.generateInsightSections(submission, brief, weights, calibrationData)
+    const sections = this.generateInsightSections(submission, brief, weights, calibrationData)
 
-    return {
+    return Promise.resolve({
       historicalContext,
       sections,
       metadata: {
@@ -31,7 +31,7 @@ export class InsightsGenerator {
         approvedCount: calibrationData.filter(item => item.approved).length,
         timestamp: Date.now()
       }
-    }
+    })
   }
 
   private generateHistoricalContext(calibrationData: CalibrationData[]): string {
@@ -45,12 +45,12 @@ export class InsightsGenerator {
     return `Based on analysis of ${calibrationData.length} previous submissions (${approvedCount} approved), we've identified several successful patterns. ${patterns}`
   }
 
-  private async generateInsightSections(
+  private generateInsightSections(
     submission: Submission,
     brief: Brief,
     weights: ImportanceWeights,
     calibrationData: CalibrationData[]
-  ): Promise<ActionableInsight[]> {
+  ): ActionableInsight[] {
     const sections: ActionableInsight[] = [
       {
         title: 'Content Enhancement',
